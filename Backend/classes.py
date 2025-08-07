@@ -307,350 +307,116 @@ class NBATeam(BaseModel):
     turnovers_avg: int = Field(..., description="Average number of turnovers by the team")
     opp_turnovers_avg: int = Field(..., description="Average number of turnovers forced by the team")
 
-class GameStats(BaseModel):
-    elo: float = Field(..., description="Current ELO rating of the team")
-    wins: int = Field(..., description="List of wins of the team")
-    # wl: float = Field(..., description="Current W/L percentage of the team")
-    
-    # Points
-    points: int = Field(..., description="Total number of points by the team")
-    # opp_points: int = Field(..., description="Total number of points given up by the team")
-    
-    # Assists
-    assists: int = Field(..., description="Total number of assists by the team")
-    # opp_assists: int = Field(..., description="Total number of assists given up by the team")
-    
-    # Rebounds
-    tot_rebounds: int = Field(..., description="Total number of total rebounds by the team")
-    # opp_tot_rebounds: int = Field(..., description="Total number of total rebounds given up by the team")
-    off_rebounds: int = Field(..., description="Total number of offensive rebounds by the team")
-    # opp_off_rebounds: int = Field(..., description="Total number of offensive rebounds given up by the team")
-    def_rebounds: int = Field(..., description="Total number of defensive rebounds by the team")
-    # opp_def_rebounds: int = Field(..., description="Total number of defensive rebounds given up by the team")
-    
-    # Blocks
-    blocks: int= Field(..., description="Total number of blocks by the team")
-    # opp_blocks: int = Field(..., description="Total number of blocks given up by the team")
-    
-    # Steals
-    steals: int = Field(..., description="Total number of steals by the team")
-    # opp_steals: int = Field(..., description="Total number of steals given up by the team")
-    
-    # Field Goals
-    fga: int = Field(..., description="Total number of field goals attempted by the team")
-    # opp_fga: int = Field(..., description="Total number of field goals attempted against the team")
-    fgm: int = Field(..., description="Total number of field goals made by the team")
-    # opp_fgm: int = Field(..., description="Totalnumber of field goals made against the team")
-    fg_pct: float = Field(..., description="Average field goal percentage by the team")
-    # opp_fg_pct_avg: float = Field(..., description="Average field goal percentage allowed by the team")
-    
-    # Three Pointers
-    three_pa: int = Field(..., description="Total number of 3-point attempts by the team")
-    # opp_three_pa: int = Field(..., description="Total number of 3-point attempts against the team")
-    three_pm: int = Field(..., description="Total number of 3-point makes by the team")
-    # opp_three_pm: int = Field(..., description="Total number of 3-point makes against the team")
-    three_pct: float = Field(..., description="Average 3-point percentage by the team")
-    # opp_three_pct_avg: float = Field(..., description="Average 3-point percentage allowed by the team")
-    
-    # Free Throws
-    fta: int = Field(..., description="Total number of free throws attempted by the team")
-    # opp_fta: int = Field(..., description="Total number of free throws attempted against the team")
-    ftm: int = Field(..., description="Total number of free throws made by the team")
-    # opp_ftm: int = Field(..., description="Total number of free throws made against the team")
-    ft_pct: float = Field(..., description="Average free throw percentage by the team")
-    # opp_ft_pct_avg: float = Field(..., description="Average free throw percentage allowed by the team")
-    
-    # Fouls
-    fouls: int = Field(..., description="Total number of fouls committed by the team")
-    # opp_fouls: int = Field(..., description="Total number of fouls committed by the opponent")
-    
-    # Turnovers
-    turnovers: int= Field(..., description="Total number of turnovers by the team")
-    # opp_turnovers: int = Field(..., description="Total number of turnovers forced by the team")
-
-class SeasonStats(BaseModel):
-    year: int = Field(..., description="The year that the stats are from")
-    games: dict[int, tuple[GameStats, GameStats]] = Field(
-        default_factory=dict,
-        description="Dictionary mapping game_id -> {stat_name: value}"
-    )
-
-    def add_game_stats(self, game_id: int, stats: tuple[GameStats, GameStats]):
-        """Add or update the stats for a specific game."""
-        self.games[game_id] = stats
-
-    def get_game_stats(self, game_id: int) -> tuple[GameStats, GameStats]:
-        """Retrieve stats for a specific game."""
-        return self.games[game_id]
-
-    def all_stats(self) -> dict[int, tuple[GameStats, GameStats]]:
-        """Return all game stats."""
-        return self.games
-    
-    def get_pre_game_stats(self, game_id: int) -> NBATeam:
-        # Filter games before the given game_id
-        prev_games = [(gid, stats) for gid, stats in self.games.items() if gid < game_id]
-
-        if not prev_games:
-            # No previous games → averages should be 0
-            return NBATeam(
-                name=NBAName("Unknown"),
-                elo=1500.0,
-                wl=0.0,
-                points_avg=0, opp_points_avg=0,
-                assists_avg=0, opp_assists_avg=0,
-                tot_rebounds_avg=0, opp_tot_rebounds_avg=0,
-                off_rebounds_avg=0, opp_off_rebounds_avg=0,
-                def_rebounds_avg=0, opp_def_rebounds_avg=0,
-                blocks_avg=0, opp_blocks_avg=0,
-                steals_avg=0, opp_steals_avg=0,
-                fga_avg=0, opp_fga_avg=0,
-                fgm_avg=0, opp_fgm_avg=0,
-                fg_pct_avg=0.0, opp_fg_pct_avg=0.0,
-                three_pa_avg=0, opp_three_pa_avg=0,
-                three_pm_avg=0, opp_three_pm_avg=0,
-                three_pct_avg=0.0, opp_three_pct_avg=0.0,
-                fta_avg=0, opp_fta_avg=0,
-                ftm_avg=0, opp_ftm_avg=0,
-                ft_pct_avg=0.0, opp_ft_pct_avg=0.0,
-                fouls_avg=0, opp_fouls_avg=0,
-                turnovers_avg=0, opp_turnovers_avg=0
-            )
-
-        # Aggregate totals
-        total_games = len(prev_games)
-        total_stats = {
-            "elo": 0.0, "wins": 0,
-            "points": 0, "opp_points": 0,
-            "assists": 0, "opp_assists": 0,
-            "tot_rebounds": 0, "opp_tot_rebounds": 0,
-            "off_rebounds": 0, "opp_off_rebounds": 0,
-            "def_rebounds": 0, "opp_def_rebounds": 0,
-            "blocks": 0, "opp_blocks": 0,
-            "steals": 0, "opp_steals": 0,
-            "fga": 0, "opp_fga": 0,
-            "fgm": 0, "opp_fgm": 0,
-            "fg_pct": 0.0, "opp_fg_pct": 0.0,
-            "three_pa": 0, "opp_three_pa": 0,
-            "three_pm": 0, "opp_three_pm": 0,
-            "three_pct": 0.0, "opp_three_pct": 0.0,
-            "fta": 0, "opp_fta": 0,
-            "ftm": 0, "opp_ftm": 0,
-            "ft_pct": 0.0, "opp_ft_pct": 0.0,
-            "fouls": 0, "opp_fouls": 0,
-            "turnovers": 0, "opp_turnovers": 0
-        }
-
-        for _, (team_stats, opp_stats) in prev_games:
-            total_stats["elo"] += team_stats.elo
-            total_stats["wins"] += team_stats.wins
-            total_stats["points"] += team_stats.points
-            total_stats["opp_points"] += opp_stats.points
-            total_stats["assists"] += team_stats.assists
-            total_stats["opp_assists"] += opp_stats.assists
-            total_stats["tot_rebounds"] += team_stats.tot_rebounds
-            total_stats["opp_tot_rebounds"] += opp_stats.tot_rebounds
-            total_stats["off_rebounds"] += team_stats.off_rebounds
-            total_stats["opp_off_rebounds"] += opp_stats.off_rebounds
-            total_stats["def_rebounds"] += team_stats.def_rebounds
-            total_stats["opp_def_rebounds"] += opp_stats.def_rebounds
-            total_stats["blocks"] += team_stats.blocks
-            total_stats["opp_blocks"] += opp_stats.blocks
-            total_stats["steals"] += team_stats.steals
-            total_stats["opp_steals"] += opp_stats.steals
-            total_stats["fga"] += team_stats.fga
-            total_stats["opp_fga"] += opp_stats.fga
-            total_stats["fgm"] += team_stats.fgm
-            total_stats["opp_fgm"] += opp_stats.fgm
-            total_stats["fg_pct"] += team_stats.fg_pct
-            total_stats["opp_fg_pct"] += opp_stats.fg_pct
-            total_stats["three_pa"] += team_stats.three_pa
-            total_stats["opp_three_pa"] += opp_stats.three_pa
-            total_stats["three_pm"] += team_stats.three_pm
-            total_stats["opp_three_pm"] += opp_stats.three_pm
-            total_stats["three_pct"] += team_stats.three_pct
-            total_stats["opp_three_pct"] += opp_stats.three_pct
-            total_stats["fta"] += team_stats.fta
-            total_stats["opp_fta"] += opp_stats.fta
-            total_stats["ftm"] += team_stats.ftm
-            total_stats["opp_ftm"] += opp_stats.ftm
-            total_stats["ft_pct"] += team_stats.ft_pct
-            total_stats["opp_ft_pct"] += opp_stats.ft_pct
-            total_stats["fouls"] += team_stats.fouls
-            total_stats["opp_fouls"] += opp_stats.fouls
-            total_stats["turnovers"] += team_stats.turnovers
-            total_stats["opp_turnovers"] += opp_stats.turnovers
-
-        # Create NBATeam with averages
-        return NBATeam(
-            name=NBAName("Unknown"),  # replace later if needed
-            elo=total_stats["elo"] / total_games,
-            wl=total_stats["wins"] / total_games,
-            points_avg=total_stats["points"] / total_games,
-            opp_points_avg=total_stats["opp_points"] / total_games,
-            assists_avg=total_stats["assists"] / total_games,
-            opp_assists_avg=total_stats["opp_assists"] / total_games,
-            tot_rebounds_avg=total_stats["tot_rebounds"] / total_games,
-            opp_tot_rebounds_avg=total_stats["opp_tot_rebounds"] / total_games,
-            off_rebounds_avg=total_stats["off_rebounds"] / total_games,
-            opp_off_rebounds_avg=total_stats["opp_off_rebounds"] / total_games,
-            def_rebounds_avg=total_stats["def_rebounds"] / total_games,
-            opp_def_rebounds_avg=total_stats["opp_def_rebounds"] / total_games,
-            blocks_avg=total_stats["blocks"] / total_games,
-            opp_blocks_avg=total_stats["opp_blocks"] / total_games,
-            steals_avg=total_stats["steals"] / total_games,
-            opp_steals_avg=total_stats["opp_steals"] / total_games,
-            fga_avg=total_stats["fga"] / total_games,
-            opp_fga_avg=total_stats["opp_fga"] / total_games,
-            fgm_avg=total_stats["fgm"] / total_games,
-            opp_fgm_avg=total_stats["opp_fgm"] / total_games,
-            fg_pct_avg=total_stats["fg_pct"] / total_games,
-            opp_fg_pct_avg=total_stats["opp_fg_pct"] / total_games,
-            three_pa_avg=total_stats["three_pa"] / total_games,
-            opp_three_pa_avg=total_stats["opp_three_pa"] / total_games,
-            three_pm_avg=total_stats["three_pm"] / total_games,
-            opp_three_pm_avg=total_stats["opp_three_pm"] / total_games,
-            three_pct_avg=total_stats["three_pct"] / total_games,
-            opp_three_pct_avg=total_stats["opp_three_pct"] / total_games,
-            fta_avg=total_stats["fta"] / total_games,
-            opp_fta_avg=total_stats["opp_fta"] / total_games,
-            ftm_avg=total_stats["ftm"] / total_games,
-            opp_ftm_avg=total_stats["opp_ftm"] / total_games,
-            ft_pct_avg=total_stats["ft_pct"] / total_games,
-            opp_ft_pct_avg=total_stats["opp_ft_pct"] / total_games,
-            fouls_avg=total_stats["fouls"] / total_games,
-            opp_fouls_avg=total_stats["opp_fouls"] / total_games,
-            turnovers_avg=total_stats["turnovers"] / total_games,
-            opp_turnovers_avg=total_stats["opp_turnovers"] / total_games
-        )
-
-
-
-
-# class Player(BaseModel):
-#     name: str
-#     stats: list[SeasonStats]
-
-class NewTeam(BaseModel):
-    name: NBAName
-    stats: list[SeasonStats]
-
 
 
 class BoxScore(BaseModel):
-    id: int
-    home: NBAName
-    visitor: NBAName
-    home_stats: GameStats
-    visitor_stats: GameStats
-    # # Points
-    # home_points: int = Field(..., description="Number of points by the home team")
-    # visitor_points: int = Field(..., description="Number of points by the visiting team")
+    # Points
+    home_points: int = Field(..., description="Number of points by the home team")
+    visitor_points: int = Field(..., description="Number of points by the visiting team")
     
-    # # Assists
-    # home_assists: int = Field(..., description="Number of assists by the home team")
-    # visitor_assists: int = Field(..., description="Number of assists by the visiting team")
+    # Assists
+    home_assists: int = Field(..., description="Number of assists by the home team")
+    visitor_assists: int = Field(..., description="Number of assists by the visiting team")
     
-    # # Rebounds
-    # home_tot_rebounds: int = Field(..., description="Total rebounds by the home team")
-    # visitor_tot_rebounds: int = Field(..., description="Total rebounds by the visiting team")
-    # home_off_rebounds: int = Field(..., description="Offensive rebounds by the home team")
-    # visitor_off_rebounds: int = Field(..., description="Offensive rebounds by the visiting team")
-    # home_def_rebounds: int = Field(..., description="Defensive rebounds by the home team")
-    # visitor_def_rebounds: int = Field(..., description="Defensive rebounds by the visiting team")
+    # Rebounds
+    home_tot_rebounds: int = Field(..., description="Total rebounds by the home team")
+    visitor_tot_rebounds: int = Field(..., description="Total rebounds by the visiting team")
+    home_off_rebounds: int = Field(..., description="Offensive rebounds by the home team")
+    visitor_off_rebounds: int = Field(..., description="Offensive rebounds by the visiting team")
+    home_def_rebounds: int = Field(..., description="Defensive rebounds by the home team")
+    visitor_def_rebounds: int = Field(..., description="Defensive rebounds by the visiting team")
     
-    # # Blocks & Steals
-    # home_blocks: int = Field(..., description="Blocks by the home team")
-    # visitor_blocks: int = Field(..., description="Blocks by the visiting team")
-    # home_steals: int = Field(..., description="Steals by the home team")
-    # visitor_steals: int = Field(..., description="Steals by the visiting team")
+    # Blocks & Steals
+    home_blocks: int = Field(..., description="Blocks by the home team")
+    visitor_blocks: int = Field(..., description="Blocks by the visiting team")
+    home_steals: int = Field(..., description="Steals by the home team")
+    visitor_steals: int = Field(..., description="Steals by the visiting team")
     
-    # # Field Goals
-    # home_fga: int = Field(..., description="Field goals attempted by the home team")
-    # visitor_fga: int = Field(..., description="Field goals attempted by the visiting team")
-    # home_fgm: int = Field(..., description="Field goals made by the home team")
-    # visitor_fgm: int = Field(..., description="Field goals made by the visiting team")
-    # home_fg_pct: float = Field(..., description="Field goal percentage for the home team")
-    # visitor_fg_pct: float = Field(..., description="Field goal percentage for the visiting team")
+    # Field Goals
+    home_fga: int = Field(..., description="Field goals attempted by the home team")
+    visitor_fga: int = Field(..., description="Field goals attempted by the visiting team")
+    home_fgm: int = Field(..., description="Field goals made by the home team")
+    visitor_fgm: int = Field(..., description="Field goals made by the visiting team")
+    home_fg_pct: float = Field(..., description="Field goal percentage for the home team")
+    visitor_fg_pct: float = Field(..., description="Field goal percentage for the visiting team")
     
-    # # Three Pointers
-    # home_3pa: int = Field(..., description="Three-pointers attempted by the home team")
-    # visitor_3pa: int = Field(..., description="Three-pointers attempted by the visiting team")
-    # home_3pm: int = Field(..., description="Three-pointers made by the home team")
-    # visitor_3pm: int = Field(..., description="Three-pointers made by the visiting team")
-    # home_3p_pct: float = Field(..., description="Three-point percentage for the home team")
-    # visitor_3p_pct: float = Field(..., description="Three-point percentage for the visiting team")
+    # Three Pointers
+    home_3pa: int = Field(..., description="Three-pointers attempted by the home team")
+    visitor_3pa: int = Field(..., description="Three-pointers attempted by the visiting team")
+    home_3pm: int = Field(..., description="Three-pointers made by the home team")
+    visitor_3pm: int = Field(..., description="Three-pointers made by the visiting team")
+    home_3p_pct: float = Field(..., description="Three-point percentage for the home team")
+    visitor_3p_pct: float = Field(..., description="Three-point percentage for the visiting team")
     
-    # # Free Throws
-    # home_fta: int = Field(..., description="Free throws attempted by the home team")
-    # visitor_fta: int = Field(..., description="Free throws attempted by the visiting team")
-    # home_ftm: int = Field(..., description="Free throws made by the home team")
-    # visitor_ftm: int = Field(..., description="Free throws made by the visiting team")
-    # home_ft_pct: float = Field(..., description="Free throw percentage for the home team")
-    # visitor_ft_pct: float = Field(..., description="Free throw percentage for the visiting team")
+    # Free Throws
+    home_fta: int = Field(..., description="Free throws attempted by the home team")
+    visitor_fta: int = Field(..., description="Free throws attempted by the visiting team")
+    home_ftm: int = Field(..., description="Free throws made by the home team")
+    visitor_ftm: int = Field(..., description="Free throws made by the visiting team")
+    home_ft_pct: float = Field(..., description="Free throw percentage for the home team")
+    visitor_ft_pct: float = Field(..., description="Free throw percentage for the visiting team")
     
-    # # Fouls & Turnovers
-    # home_fouls: int = Field(..., description="Personal fouls by the home team")
-    # visitor_fouls: int = Field(..., description="Personal fouls by the visiting team")
-    # home_to: int = Field(..., description="Turnovers by the home team")
-    # visitor_to: int = Field(..., description="Turnovers by the visiting team")
+    # Fouls & Turnovers
+    home_fouls: int = Field(..., description="Personal fouls by the home team")
+    visitor_fouls: int = Field(..., description="Personal fouls by the visiting team")
+    home_to: int = Field(..., description="Turnovers by the home team")
+    visitor_to: int = Field(..., description="Turnovers by the visiting team")
 
     def to_row(self) -> pd.Series:
         return pd.Series({
-            "Game ID": self.id,
             # "Home Team": self.home.value,
             # "Visitor Team": self.visitor.value,
             # Points
-            "Home Team Points": self.home_stats.points,
-            "Visitor Team Points": self.visitor_stats.points,
+            "Home Team Points": self.home_points,
+            "Visitor Team Points": self.visitor_points,
 
             # Assists
-            "Home Team Assists": self.home_stats.assists,
-            "Visitor Team Assists": self.visitor_stats.assists,
+            "Home Team Assists": self.home_assists,
+            "Visitor Team Assists": self.visitor_assists,
 
             # Rebounds
-            "Home Team Tot Rebounds": self.home_stats.tot_rebounds,
-            "Visitor Team Tot Rebounds": self.visitor_stats.tot_rebounds,
-            "Home Team Off Rebounds": self.home_stats.off_rebounds,
-            "Visitor Team Off Rebounds": self.visitor_stats.off_rebounds,
-            "Home Team Def Rebounds": self.home_stats.def_rebounds,
-            "Visitor Team Def Rebounds": self.visitor_stats.def_rebounds,
+            "Home Team Tot Rebounds": self.home_tot_rebounds,
+            "Visitor Team Tot Rebounds": self.visitor_tot_rebounds,
+            "Home Team Off Rebounds": self.home_off_rebounds,
+            "Visitor Team Off Rebounds": self.visitor_off_rebounds,
+            "Home Team Def Rebounds": self.home_def_rebounds,
+            "Visitor Team Def Rebounds": self.visitor_def_rebounds,
 
             # Blocks & Steals
-            "Home Team Blocks": self.home_stats.blocks,
-            "Visitor Team Blocks": self.visitor_stats.blocks,
-            "Home Team Steals": self.home_stats.steals,
-            "Visitor Team Steals": self.visitor_stats.steals,
+            "Home Team Blocks": self.home_blocks,
+            "Visitor Team Blocks": self.visitor_blocks,
+            "Home Team Steals": self.home_steals,
+            "Visitor Team Steals": self.visitor_steals,
 
             # Field Goals
-            "Home Team FGA": self.home_stats.fga,
-            "Visitor Team FGA": self.visitor_stats.fga,
-            "Home Team FGM": self.home_stats.fgm,
-            "Visitor Team FGM": self.visitor_stats.fgm,
-            "Home Team FG%": self.home_stats.fg_pct,
-            "Visitor Team FG%": self.visitor_stats.fg_pct,
+            "Home Team FGA": self.home_fga,
+            "Visitor Team FGA": self.visitor_fga,
+            "Home Team FGM": self.home_fgm,
+            "Visitor Team FGM": self.visitor_fgm,
+            "Home Team FG%": self.home_fg_pct,
+            "Visitor Team FG%": self.visitor_fg_pct,
 
             # Three Pointers
-            "Home Team 3PA": self.home_stats.three_pa,
-            "Visitor Team 3PA": self.visitor_stats.three_pa,
-            "Home Team 3PM": self.home_stats.three_pm,
-            "Visitor Team 3PM": self.visitor_stats.three_pm,
-            "Home Team 3P%": self.home_stats.three_pct,
-            "Visitor Team 3P%": self.visitor_stats.three_pct,
+            "Home Team 3PA": self.home_3pa,
+            "Visitor Team 3PA": self.visitor_3pa,
+            "Home Team 3PM": self.home_3pm,
+            "Visitor Team 3PM": self.visitor_3pm,
+            "Home Team 3P%": self.home_3p_pct,
+            "Visitor Team 3P%": self.visitor_3p_pct,
 
             # Free Throws
-            "Home Team FTA": self.home_stats.fta,
-            "Visitor Team FTA": self.visitor_stats.fta,
-            "Home Team FTM": self.home_stats.ftm,
-            "Visitor Team FTM": self.visitor_stats.ftm,
-            "Home Team FT%": self.home_stats.ft_pct,
-            "Visitor Team FT%": self.visitor_stats.ft_pct,
+            "Home Team FTA": self.home_fta,
+            "Visitor Team FTA": self.visitor_fta,
+            "Home Team FTM": self.home_ftm,
+            "Visitor Team FTM": self.visitor_ftm,
+            "Home Team FT%": self.home_ft_pct,
+            "Visitor Team FT%": self.visitor_ft_pct,
 
             # Fouls & Turnovers
-            "Home Team Fouls": self.home_stats.fouls,
-            "Visitor Team Fouls": self.visitor_stats.fouls,
-            "Home Team TO": self.home_stats.turnovers,
-            "Visitor Team TO": self.visitor_stats.turnovers
+            "Home Team Fouls": self.home_fouls,
+            "Visitor Team Fouls": self.visitor_fouls,
+            "Home Team TO": self.home_to,
+            "Visitor Team TO": self.visitor_to
         })
 
 class GameBase(BaseModel):
