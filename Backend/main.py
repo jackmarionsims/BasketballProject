@@ -86,18 +86,18 @@ sample_data = {
 sample_df = pd.DataFrame(sample_data)
 
 # Instantiate the BoxScore object
-sample_box_score = BoxScore(box_score=sample_df.iloc[0].to_dict())
-finished_games = add_scheduled_game(finished_games, game, team_elos)
-finished_games.to_csv("test_upcoming.csv")
-finished_games = add_completed_game(finished_games, sample_box_score)
-finished_games.to_csv("test_finished.csv")
-# all_teams = df_to_teams(finished_games)
+# sample_box_score = BoxScore(box_score=sample_df.iloc[0].to_dict())
+# finished_games = add_scheduled_game(finished_games, game, team_elos)
+# finished_games.to_csv("test_upcoming.csv")
+# finished_games = add_completed_game(finished_games, sample_box_score)
+# finished_games.to_csv("test_finished.csv")
+# # all_teams = df_to_teams(finished_games)
 
-log_model = joblib.load("../logreg_model.pkl")
-xgb_home = XGBRegressor()
-xgb_home.load_model("../home_model_scores.json")
-xgb_visitor = XGBRegressor()
-xgb_visitor.load_model("../visitor_model_scores.json")
+# log_model = joblib.load("../logreg_model.pkl")
+# xgb_home = XGBRegressor()
+# xgb_home.load_model("../home_model_scores.json")
+# xgb_visitor = XGBRegressor()
+# xgb_visitor.load_model("../visitor_model_scores.json")
 
 # @app.get("/items/")
 # async def read_items(
@@ -261,4 +261,24 @@ async def filtered_games(home_filter: FilterParams = Depends(get_home_filter), v
     for idx, row in df.iterrows():
         games.append(row_to_completed_game(row.to_frame().T))
     return games
+
+@app.get("/{team_name}")
+async def get_team(
+    team_name: Annotated[str, Path(title="The name of the team to get")],
+    season: Annotated[int, Query(title="The season to access")] = 2025
+):
+    global finished_games
+    season_games = finished_games[finished_games["Year"] == season]
+    team_games = season_games[
+        (season_games["Home Team"] == team_name) |
+        (season_games["Visitor Team"] == team_name)
+    ]
+    if not team_games.empty:
+        # Option 1: list of dicts
+        return team_games.to_dict(orient="records")
+
+        # Option 2: JSON string (less common for FastAPI return)
+        # return team_games.to_json(orient="records")
+    else:
+        raise HTTPException(status_code=404, detail="Invalid team or year")
 
