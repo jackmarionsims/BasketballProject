@@ -1,8 +1,10 @@
 
 import React, { useState } from "react";
-import {Table, Loader, Alert, NumberInput, RangeSlider, Button, Group, Container, Grid, Text} from "@mantine/core";
+import {Table, Loader, Alert, NumberInput, RangeSlider, Button, Group, Container, Grid, Text, Card, Checkbox, Stack} from "@mantine/core";
+import StatFilter from "./StatFilter";
 import { getFilteredGames, type FilterParams } from "./api";
 import { Link } from "react-router-dom";
+import './App.css';
 
 export default function FilteredGames() {
     const [games, setGames] = useState<any[]>([]);
@@ -86,122 +88,11 @@ export default function FilteredGames() {
         to_max: 40
     });
 
-    const [team1Points, setTeam1Points] = useState<[number, number]>([0, 200]);
-    const [team2Points, setTeam2Points] = useState<[number, number]>([0, 200]);
-
-    // Assists
-    const [team1Assists, setTeam1Assists] = useState<[number, number]>([0, 60]);
-    const [team2Assists, setTeam2Assists] = useState<[number, number]>([0, 60]);
-
-    // Total Rebounds
-    const [team1TotRebounds, setTeam1TotRebounds] = useState<[number, number]>([0, 100]);
-    const [team2TotRebounds, setTeam2TotRebounds] = useState<[number, number]>([0, 100]);
-
-    // Offensive Rebounds
-    const [team1OffRebounds, setTeam1OffRebounds] = useState<[number, number]>([0, 40]);
-    const [team2OffRebounds, setTeam2OffRebounds] = useState<[number, number]>([0, 40]);
-
-    // Defensive Rebounds
-    const [team1DefRebounds, setTeam1DefRebounds] = useState<[number, number]>([0, 60]);
-    const [team2DefRebounds, setTeam2DefRebounds] = useState<[number, number]>([0, 60]);
-
-    // Blocks
-    const [team1Blocks, setTeam1Blocks] = useState<[number, number]>([0, 30]);
-    const [team2Blocks, setTeam2Blocks] = useState<[number, number]>([0, 30]);
-
-    // Steals
-    const [team1Steals, setTeam1Steals] = useState<[number, number]>([0, 30]);
-    const [team2Steals, setTeam2Steals] = useState<[number, number]>([0, 30]);
-
-    // Field Goals Attempted
-    const [team1FGA, setTeam1FGA] = useState<[number, number]>([0, 150]);
-    const [team2FGA, setTeam2FGA] = useState<[number, number]>([0, 150]);
-
-    // Field Goals Made
-    const [team1FGM, setTeam1FGM] = useState<[number, number]>([0, 80]);
-    const [team2FGM, setTeam2FGM] = useState<[number, number]>([0, 80]);
-
-    // Field Goal %
-    const [team1FGPct, setTeam1FGPct] = useState<[number, number]>([0, 100]);
-    const [team2FGPct, setTeam2FGPct] = useState<[number, number]>([0, 100]);
-
-    // Three-Point Attempts
-    const [team1TPA, setTeam1TPA] = useState<[number, number]>([0, 80]);
-    const [team2TPA, setTeam2TPA] = useState<[number, number]>([0, 80]);
-
-    // Three-Point Makes
-    const [team1TPM, setTeam1TPM] = useState<[number, number]>([0, 40]);
-    const [team2TPM, setTeam2TPM] = useState<[number, number]>([0, 40]);
-
-    // Three-Point %
-    const [team1TPPct, setTeam1TPPct] = useState<[number, number]>([0, 100]);
-    const [team2TPPct, setTeam2TPPct] = useState<[number, number]>([0, 100]);
-
-    // Free Throw Attempts
-    const [team1FTA, setTeam1FTA] = useState<[number, number]>([0, 80]);
-    const [team2FTA, setTeam2FTA] = useState<[number, number]>([0, 80]);
-
-    // Free Throw Makes
-    const [team1FTM, setTeam1FTM] = useState<[number, number]>([0, 80]);
-    const [team2FTM, setTeam2FTM] = useState<[number, number]>([0, 80]);
-
-    // Free Throw %
-    const [team1FTPct, setTeam1FTPct] = useState<[number, number]>([0, 100]);
-    const [team2FTPct, setTeam2FTPct] = useState<[number, number]>([0, 100]);
-
-    // Fouls
-    const [team1Fouls, setTeam1Fouls] = useState<[number, number]>([0, 60]);
-    const [team2Fouls, setTeam2Fouls] = useState<[number, number]>([0, 60]);
-
-    // Turnovers
-    const [team1Turnovers, setTeam1Turnovers] = useState<[number, number]>([0, 40]);
-    const [team2Turnovers, setTeam2Turnovers] = useState<[number, number]>([0, 40]);
-
-    const [pointsFilter, setPointsFilter] = useState(true);
-    const [assistsFilter, setAssistsFilter] = useState(false);
-    const [totReboundsFilter, setTotReboundsFilter] = useState(false);
-    const [offReboundsFilter, setOffReboundsFilter] = useState(false);
     const [filterType, setFilterType] = useState<string>("");
     const [sliders, setSliders] = useState(true);
+    const [activeFilters, setActiveFilters] = useState<string[]>(['points']);
 
-    const setTeam1PointsMin = (value: number | string) => {
-        if (typeof value === "number") setTeam1Points([value, team1Points[1]]);
-    };
-    const setTeam1PointsMax = (value: number | string) => {
-        if (typeof value === "number") setTeam1Points([team1Points[0], value]);
-    };
-    const setTeam2PointsMin = (value: number | string) => {
-        if (typeof value === "number") setTeam2Points([value, team2Points[1]]);
-    };
-    const setTeam2PointsMax = (value: number | string) => {
-        if (typeof value === "number") setTeam2Points([team2Points[0], value]);
-    };
 
-    const setTeam1AssistsMin = (value: number | string) => {
-        if (typeof value === "number") setTeam1Assists([value, team1Assists[1]]);
-    };
-    const setTeam1AssistsMax = (value: number | string) => {
-        if (typeof value === "number") setTeam1Points([team1Assists[0], value]);
-    };
-    const setTeam2AssistsMin = (value: number | string) => {
-        if (typeof value === "number") setTeam2Points([value, team2Assists[1]]);
-    };
-    const setTeam2AssistsMax = (value: number | string) => {
-        if (typeof value === "number") setTeam2Points([team2Assists[0], value]);
-    };
-
-    // const setTeam1PointsMin = (value: number | string) => {
-    //     if (typeof value === "number") setTeam1Points([value, Team1Points[1]]);
-    // };
-    // const setTeam1PointsMax = (value: number | string) => {
-    //     if (typeof value === "number") setTeam1Points([Team1Points[0], value]);
-    // };
-    // const setTeam2PointsMin = (value: number | string) => {
-    //     if (typeof value === "number") setTeam2Points([value, Team2Points[1]]);
-    // };
-    // const setTeam2PointsMax = (value: number | string) => {
-    //     if (typeof value === "number") setTeam2Points([Team2Points[0], value]);
-    // };
 
     const filter = async () => {
         // const filter1: FilterParams = {
@@ -255,18 +146,58 @@ export default function FilteredGames() {
                 Winner/Loser Filter
             </Button>
             <h2></h2>
-            <Button
+            <Card withBorder padding="md" mb="lg">
+                <Text fw={600} mb="xs">Active Filters</Text>
+                <Checkbox.Group
+                    value={activeFilters}
+                    onChange={setActiveFilters}
+                >
+                    <Group align="flex-start" gap="xl"> 
+                        <Stack>
+                            <Checkbox value="points" label="Points" />
+                            <Checkbox value="tot rebounds" label="Total Rebounds" />
+                            <Checkbox value="off rebounds" label="Offensive Rebounds" />
+                            <Checkbox value="def rebounds" label="Defensive Rebounds" />
+                        </Stack>
+                        <Stack>
+                            <Checkbox value="assists" label="Assists" />
+                            <Checkbox value="steals" label="Steals" />
+                            <Checkbox value="blocks" label="Blocks" />
+                            <Checkbox value="turnovers" label="Turnovers" />
+                        </Stack>
+                        <Stack>
+                            <Checkbox value="fga" label="Field Goal Attempts" />
+                            <Checkbox value="fgm" label="Field Goals Made" />
+                            <Checkbox value="fg%" label="Field Goal %" />
+                            <Checkbox value="fouls" label="Fouls" />
+                        </Stack>
+                        <Stack>
+                            <Checkbox value="fta" label="Free Throw Attempts" />
+                            <Checkbox value="ftm" label="Free Throws Made" />
+                            <Checkbox value="ft%" label="Free Throw %" />
+                        </Stack>
+                        <Stack>
+                            <Checkbox value="3pa" label="3 Point Attempts" />
+                            <Checkbox value="3pm" label="3 Pointers Made" />
+                            <Checkbox value="3p%" label="3 Point %" />
+                        </Stack>
+                    </Group>
+                </Checkbox.Group>
+            </Card>
+
+            {activeFilters.length > 0 &&<Button
                 onClick={() => setSliders(!sliders)}
                 mt="md"
-                variant={sliders === true ? "filled" : "light"}
+                variant={!sliders ? "filled" : "light"}
             >
-                Include Sliders
-            </Button>
+                {sliders ? "Remove Sliders" : "Add Sliders"}
+            </Button>}
+            
 
             {/* Points Filters */}
-            <Grid gutter="md">
+            {activeFilters.includes("points") && <Grid className="filter-grid" gutter="md">
                 {/* Team1 Points Filter */}
-                {pointsFilter && <Grid.Col span={{ base: 12, sm: 6 }}>
+                <Grid.Col span={{ base: 12, sm: 6 }}>
                 <Text fw={600}>
                     {filterType === "home-visitor"
                         ? "Home Team Points"
@@ -319,10 +250,10 @@ export default function FilteredGames() {
                     label="Max"
                     />
                 </Group>
-                </Grid.Col>}
-
+                </Grid.Col>
+                
                 {/* Team2 Points Filter */}
-                {pointsFilter && <Grid.Col span={{ base: 12, sm: 6 }}>
+                <Grid.Col span={{ base: 12, sm: 6 }}>
                 <Text fw={600}>
                     {filterType === "home-visitor"
                         ? "Visiting Team Points"
@@ -374,130 +305,15 @@ export default function FilteredGames() {
                     label="Max"
                     />
                 </Group>
-                </Grid.Col>}
-                <Button onClick={() => setPointsFilter(!pointsFilter)} mt="md">
-                    {pointsFilter === true ? "Remove Points Filter" : "Add Points Filter"}
-                </Button>
-            </Grid>
-            
-            {/* Assists Filters */}
-            <Grid gutter="md">
-                {assistsFilter && <Grid.Col span={{ base: 12, sm: 6 }}>
-                <Text fw={600}>
-                    {filterType === "home-visitor"
-                        ? "Home Team Assists"
-                        : filterType === "winner-loser"
-                        ? "Winning Team Assists"
-                        : "Team 1 Assists"}
-                </Text>
-
-                {sliders &&<RangeSlider
-                    minRange={0}
-                    max={200}
-                    color="blue"
-                    value={[team1Filter.ast_min!, team1Filter.ast_max!]}
-                    onChange={(value) =>
-                        setTeam1Filter((prev) => ({
-                            ...prev,
-                            ast_min: value[0],
-                            ast_max: value[1],
-                        }))
-                    }
-                    marks={[
-                    { value: 0, label: "0" },
-                    { value: 100, label: "100" },
-                    { value: 200, label: "200" },
-                    ]}
-                />}
-                <Group grow mt="xs">
-                    <NumberInput
-                    min={0}
-                    max={200}
-                    value={team1Filter.ast_min}
-                    onChange={(value) =>
-                        setTeam1Filter((prev) => ({
-                            ...prev,
-                            ast_min: Number(value)
-                        }))
-                    }
-                    label="Min"
-                    />
-                    <NumberInput
-                    min={0}
-                    max={200}
-                    value={team1Filter.ast_max}
-                    onChange={(value) =>
-                        setTeam1Filter((prev) => ({
-                            ...prev,
-                            ast_max: Number(value),
-                        }))
-                    }
-                    label="Max"
-                    />
-                </Group>
-                </Grid.Col>}
-
-                {assistsFilter && <Grid.Col span={{ base: 12, sm: 6 }}>
-                <Text fw={600}>
-                    {filterType === "home-visitor"
-                        ? "Visiting Team Assists"
-                        : filterType === "winner-loser"
-                        ? "Losing Team Assists"
-                        : "Team 2 Assists"}
-                </Text>
-                {sliders && <RangeSlider
-                    minRange={0}
-                    max={200}
-                    color="blue"
-                    value={[team2Filter.ast_min!, team2Filter.ast_max!]}
-                    onChange={(value) =>
-                        setTeam2Filter((prev) => ({
-                            ...prev,
-                            ast_min: value[0],
-                            ast_max: value[1],
-                        }))
-                    }
-                    marks={[
-                    { value: 0, label: "0" },
-                    { value: 100, label: "100" },
-                    { value: 200, label: "200" },
-                    ]}
-                />}
-                <Group grow mt="xs">
-                    <NumberInput
-                    min={0}
-                    max={200}
-                    value={team2Filter.ast_min}
-                    onChange={(value) =>
-                        setTeam2Filter((prev) => ({
-                            ...prev,
-                            ast_min: Number(value)
-                        }))
-                    }
-                    label="Min"
-                    />
-                    <NumberInput
-                    min={0}
-                    max={200}
-                    value={team2Filter.ast_max}
-                    onChange={(value) =>
-                        setTeam2Filter((prev) => ({
-                            ...prev,
-                            ast_max: Number(value),
-                        }))
-                    }
-                    label="Max"
-                    />
-                </Group>
-                </Grid.Col>}
-                <Button onClick={() => setAssistsFilter(!assistsFilter)} mt="md">
-                    {assistsFilter === true ? "Remove Assists Filter" : "Add Assists Filter"}
-                </Button>
-            </Grid>
+                </Grid.Col>
+                {/* <Button onClick={() => setPointsFilter(!pointsFilter)} mt="md" variant={!pointsFilter ? "filled" : "light"}>
+                    {pointsFilter ? "Remove Points Filter" : "Add Points Filter"}
+                </Button> */}
+            </Grid>}
 
             {/* Tot Rebounds Filters */}
-            <Grid gutter="md">
-                {totReboundsFilter && <Grid.Col span={{ base: 12, sm: 6 }}>
+            {activeFilters.includes("tot rebounds") && <Grid className="filter-grid" gutter="md">
+                <Grid.Col span={{ base: 12, sm: 6 }}>
                 <Text fw={600}>
                     {filterType === "home-visitor"
                         ? "Home Team Total Rebounds"
@@ -508,26 +324,25 @@ export default function FilteredGames() {
 
                 {sliders &&<RangeSlider
                     minRange={0}
-                    max={200}
+                    max={100}
                     color="blue"
-                    value={[team1Filter.ast_min!, team1Filter.ast_max!]}
+                    value={[team1Filter.trb_min!, team1Filter.trb_max!]}
                     onChange={(value) =>
                         setTeam1Filter((prev) => ({
                             ...prev,
-                            ast_min: value[0],
-                            ast_max: value[1],
+                            trb_min: value[0],
+                            trb_max: value[1],
                         }))
                     }
                     marks={[
                     { value: 0, label: "0" },
                     { value: 100, label: "100" },
-                    { value: 200, label: "200" },
                     ]}
                 />}
                 <Group grow mt="xs">
                     <NumberInput
                     min={0}
-                    max={200}
+                    max={100}
                     value={team1Filter.trb_min}
                     onChange={(value) =>
                         setTeam1Filter((prev) => ({
@@ -539,7 +354,7 @@ export default function FilteredGames() {
                     />
                     <NumberInput
                     min={0}
-                    max={200}
+                    max={100}
                     value={team1Filter.trb_max}
                     onChange={(value) =>
                         setTeam1Filter((prev) => ({
@@ -550,19 +365,19 @@ export default function FilteredGames() {
                     label="Max"
                     />
                 </Group>
-                </Grid.Col>}
+                </Grid.Col>
 
-                {totReboundsFilter && <Grid.Col span={{ base: 12, sm: 6 }}>
+                <Grid.Col span={{ base: 12, sm: 6 }}>
                 <Text fw={600}>
                     {filterType === "home-visitor"
-                        ? "Visiting Team Points"
+                        ? "Visiting Team Total Rebounds"
                         : filterType === "winner-loser"
-                        ? "Losing Team Points"
-                        : "Team 2 Points"}
+                        ? "Losing Team Total Rebounds"
+                        : "Team 2 Total Rebounds"}
                 </Text>
                 {sliders && <RangeSlider
                     minRange={0}
-                    max={200}
+                    max={100}
                     color="blue"
                     value={[team2Filter.trb_min!, team2Filter.trb_max!]}
                     onChange={(value) =>
@@ -575,13 +390,12 @@ export default function FilteredGames() {
                     marks={[
                     { value: 0, label: "0" },
                     { value: 100, label: "100" },
-                    { value: 200, label: "200" },
                     ]}
                 />}
                 <Group grow mt="xs">
                     <NumberInput
                     min={0}
-                    max={200}
+                    max={100}
                     value={team2Filter.trb_min}
                     onChange={(value) =>
                         setTeam2Filter((prev) => ({
@@ -593,7 +407,7 @@ export default function FilteredGames() {
                     />
                     <NumberInput
                     min={0}
-                    max={200}
+                    max={100}
                     value={team2Filter.trb_max}
                     onChange={(value) =>
                         setTeam2Filter((prev) => ({
@@ -604,19 +418,685 @@ export default function FilteredGames() {
                     label="Max"
                     />
                 </Group>
-                </Grid.Col>}
-                <Button onClick={() => setTotReboundsFilter(!totReboundsFilter)} mt="md">
-                    {totReboundsFilter === true ? "Remove Total Rebounds Filter" : "Add Total Rebounds Filter"}
-                </Button>
-            </Grid>
-                    
-            <Button onClick={filter} mt="md">
-                Filter
-            </Button>
+                </Grid.Col>
+                {/* <Button onClick={() => setTotReboundsFilter(!totReboundsFilter)} mt="md" variant={!totReboundsFilter ? "filled" : "light"}>
+                    {totReboundsFilter ? "Remove Total Rebounds Filter" : "Add Total Rebounds Filter"}
+                </Button> */}
+            </Grid>}
 
-            <Text size="lg" fw={700} mt="xl" mb="sm">
+            {/* Off Rebounds Filters */}
+            {activeFilters.includes("off rebounds") && <Grid className="filter-grid" gutter="md">
+                <Grid.Col span={{ base: 12, sm: 6 }}>
+                <Text fw={600}>
+                    {filterType === "home-visitor"
+                        ? "Home Team Offensive Rebounds"
+                        : filterType === "winner-loser"
+                        ? "Winning Team Offensive Rebounds"
+                        : "Team 1 Offensive Rebounds"}
+                </Text>
+
+                {sliders &&<RangeSlider
+                    minRange={0}
+                    max={40}
+                    color="blue"
+                    value={[team1Filter.orb_min!, team1Filter.orb_max!]}
+                    onChange={(value) =>
+                        setTeam1Filter((prev) => ({
+                            ...prev,
+                            orb_min: value[0],
+                            orb_max: value[1],
+                        }))
+                    }
+                    marks={[
+                    { value: 0, label: "0" },
+                    { value: 40, label: "40" },
+                    ]}
+                />}
+                <Group grow mt="xs">
+                    <NumberInput
+                    min={0}
+                    max={40}
+                    value={team1Filter.orb_min}
+                    onChange={(value) =>
+                        setTeam1Filter((prev) => ({
+                            ...prev,
+                            orb_min: Number(value)
+                        }))
+                    }
+                    label="Min"
+                    />
+                    <NumberInput
+                    min={0}
+                    max={40}
+                    value={team1Filter.orb_max}
+                    onChange={(value) =>
+                        setTeam1Filter((prev) => ({
+                            ...prev,
+                            orb_max: Number(value),
+                        }))
+                    }
+                    label="Max"
+                    />
+                </Group>
+                </Grid.Col>
+
+                <Grid.Col span={{ base: 12, sm: 6 }}>
+                <Text fw={600}>
+                    {filterType === "home-visitor"
+                        ? "Visiting Team Offensive Rebounds"
+                        : filterType === "winner-loser"
+                        ? "Losing Team Offensive Rebounds"
+                        : "Team 2 Offensive Rebounds"}
+                </Text>
+                {sliders && <RangeSlider
+                    minRange={0}
+                    max={40}
+                    color="blue"
+                    value={[team2Filter.orb_min!, team2Filter.orb_max!]}
+                    onChange={(value) =>
+                        setTeam2Filter((prev) => ({
+                            ...prev,
+                            orb_min: value[0],
+                            orb_max: value[1],
+                        }))
+                    }
+                    marks={[
+                    { value: 0, label: "0" },
+                    { value: 40, label: "40" },
+                    ]}
+                />}
+                <Group grow mt="xs">
+                    <NumberInput
+                    min={0}
+                    max={40}
+                    value={team2Filter.orb_min}
+                    onChange={(value) =>
+                        setTeam2Filter((prev) => ({
+                            ...prev,
+                            orb_min: Number(value)
+                        }))
+                    }
+                    label="Min"
+                    />
+                    <NumberInput
+                    min={0}
+                    max={40}
+                    value={team2Filter.orb_max}
+                    onChange={(value) =>
+                        setTeam2Filter((prev) => ({
+                            ...prev,
+                            orb_max: Number(value),
+                        }))
+                    }
+                    label="Max"
+                    />
+                </Group>
+                </Grid.Col>
+                {/* <Button onClick={() => setTotReboundsFilter(!totReboundsFilter)} mt="md" variant={!totReboundsFilter ? "filled" : "light"}>
+                    {totReboundsFilter ? "Remove Total Rebounds Filter" : "Add Total Rebounds Filter"}
+                </Button> */}
+            </Grid>}
+
+            {/* Def Rebounds Filters */}
+            {activeFilters.includes("def rebounds") && <Grid className="filter-grid" gutter="md">
+                <Grid.Col span={{ base: 12, sm: 6 }}>
+                <Text fw={600}>
+                    {filterType === "home-visitor"
+                        ? "Home Team Defensive Rebounds"
+                        : filterType === "winner-loser"
+                        ? "Winning Team Defensive Rebounds"
+                        : "Team 1 Defensive Rebounds"}
+                </Text>
+
+                {sliders &&<RangeSlider
+                    minRange={0}
+                    max={60}
+                    color="blue"
+                    value={[team1Filter.drb_min!, team1Filter.drb_max!]}
+                    onChange={(value) =>
+                        setTeam1Filter((prev) => ({
+                            ...prev,
+                            drb_min: value[0],
+                            drb_max: value[1],
+                        }))
+                    }
+                    marks={[
+                    { value: 0, label: "0" },
+                    { value: 60, label: "60" },
+                    ]}
+                />}
+                <Group grow mt="xs">
+                    <NumberInput
+                    min={0}
+                    max={60}
+                    value={team1Filter.drb_min}
+                    onChange={(value) =>
+                        setTeam1Filter((prev) => ({
+                            ...prev,
+                            drb_min: Number(value)
+                        }))
+                    }
+                    label="Min"
+                    />
+                    <NumberInput
+                    min={0}
+                    max={60}
+                    value={team1Filter.drb_max}
+                    onChange={(value) =>
+                        setTeam1Filter((prev) => ({
+                            ...prev,
+                            drb_max: Number(value),
+                        }))
+                    }
+                    label="Max"
+                    />
+                </Group>
+                </Grid.Col>
+
+                <Grid.Col span={{ base: 12, sm: 6 }}>
+                <Text fw={600}>
+                    {filterType === "home-visitor"
+                        ? "Visiting Team Defensive Rebounds"
+                        : filterType === "winner-loser"
+                        ? "Losing Team Defensive Rebounds"
+                        : "Team 2 Defensive Rebounds"}
+                </Text>
+                {sliders && <RangeSlider
+                    minRange={0}
+                    max={60}
+                    color="blue"
+                    value={[team2Filter.drb_min!, team2Filter.drb_max!]}
+                    onChange={(value) =>
+                        setTeam2Filter((prev) => ({
+                            ...prev,
+                            drb_min: value[0],
+                            drb_max: value[1],
+                        }))
+                    }
+                    marks={[
+                    { value: 0, label: "0" },
+                    { value: 60, label: "60" },
+                    ]}
+                />}
+                <Group grow mt="xs">
+                    <NumberInput
+                    min={0}
+                    max={60}
+                    value={team2Filter.drb_min}
+                    onChange={(value) =>
+                        setTeam2Filter((prev) => ({
+                            ...prev,
+                            drb_min: Number(value)
+                        }))
+                    }
+                    label="Min"
+                    />
+                    <NumberInput
+                    min={0}
+                    max={60}
+                    value={team2Filter.drb_max}
+                    onChange={(value) =>
+                        setTeam2Filter((prev) => ({
+                            ...prev,
+                            drb_max: Number(value),
+                        }))
+                    }
+                    label="Max"
+                    />
+                </Group>
+                </Grid.Col>
+                {/* <Button onClick={() => setTotReboundsFilter(!totReboundsFilter)} mt="md" variant={!totReboundsFilter ? "filled" : "light"}>
+                    {totReboundsFilter ? "Remove Total Rebounds Filter" : "Add Total Rebounds Filter"}
+                </Button> */}
+            </Grid>}
+                    
+            {/* Assists Filters */}
+            {activeFilters.includes("assists") && <Grid className="filter-grid" gutter="md">
+                <Grid.Col span={{ base: 12, sm: 6 }}>
+                <Text fw={600}>
+                    {filterType === "home-visitor"
+                        ? "Home Team Assists"
+                        : filterType === "winner-loser"
+                        ? "Winning Team Assists"
+                        : "Team 1 Assists"}
+                </Text>
+
+                {sliders &&<RangeSlider
+                    minRange={0}
+                    max={60}
+                    color="blue"
+                    value={[team1Filter.ast_min!, team1Filter.ast_max!]}
+                    onChange={(value) =>
+                        setTeam1Filter((prev) => ({
+                            ...prev,
+                            ast_min: value[0],
+                            ast_max: value[1],
+                        }))
+                    }
+                    marks={[
+                    { value: 0, label: "0" },
+                    { value: 60, label: "60" },
+                    ]}
+                />}
+                <Group grow mt="xs">
+                    <NumberInput
+                    min={0}
+                    max={60}
+                    value={team1Filter.ast_min}
+                    onChange={(value) =>
+                        setTeam1Filter((prev) => ({
+                            ...prev,
+                            ast_min: Number(value)
+                        }))
+                    }
+                    label="Min"
+                    />
+                    <NumberInput
+                    min={0}
+                    max={60}
+                    value={team1Filter.ast_max}
+                    onChange={(value) =>
+                        setTeam1Filter((prev) => ({
+                            ...prev,
+                            ast_max: Number(value),
+                        }))
+                    }
+                    label="Max"
+                    />
+                </Group>
+                </Grid.Col>
+
+                <Grid.Col span={{ base: 12, sm: 6 }}>
+                <Text fw={600}>
+                    {filterType === "home-visitor"
+                        ? "Visiting Team Assists"
+                        : filterType === "winner-loser"
+                        ? "Losing Team Assists"
+                        : "Team 2 Assists"}
+                </Text>
+                {sliders && <RangeSlider
+                    minRange={0}
+                    max={60}
+                    color="blue"
+                    value={[team2Filter.ast_min!, team2Filter.ast_max!]}
+                    onChange={(value) =>
+                        setTeam2Filter((prev) => ({
+                            ...prev,
+                            ast_min: value[0],
+                            ast_max: value[1],
+                        }))
+                    }
+                    marks={[
+                    { value: 0, label: "0" },
+                    { value: 60, label: "60" },
+                    ]}
+                />}
+                <Group grow mt="xs">
+                    <NumberInput
+                    min={0}
+                    max={60}
+                    value={team2Filter.ast_min}
+                    onChange={(value) =>
+                        setTeam2Filter((prev) => ({
+                            ...prev,
+                            ast_min: Number(value)
+                        }))
+                    }
+                    label="Min"
+                    />
+                    <NumberInput
+                    min={0}
+                    max={60}
+                    value={team2Filter.ast_max}
+                    onChange={(value) =>
+                        setTeam2Filter((prev) => ({
+                            ...prev,
+                            ast_max: Number(value),
+                        }))
+                    }
+                    label="Max"
+                    />
+                </Group>
+                </Grid.Col>
+            </Grid>}
+            
+            {/* Steals Filters */}
+            {activeFilters.includes("steals") && <Grid className="filter-grid" gutter="md">
+                <Grid.Col span={{ base: 12, sm: 6 }}>
+                <Text fw={600}>
+                    {filterType === "home-visitor"
+                        ? "Home Team Steals"
+                        : filterType === "winner-loser"
+                        ? "Winning Team Steals"
+                        : "Team 1 Steals"}
+                </Text>
+
+                {sliders &&<RangeSlider
+                    minRange={0}
+                    max={30}
+                    color="blue"
+                    value={[team1Filter.stl_min!, team1Filter.stl_max!]}
+                    onChange={(value) =>
+                        setTeam1Filter((prev) => ({
+                            ...prev,
+                            stl_min: value[0],
+                            stl_max: value[1],
+                        }))
+                    }
+                    marks={[
+                    { value: 0, label: "0" },
+                    { value: 30, label: "30" },
+                    ]}
+                />}
+                <Group grow mt="xs">
+                    <NumberInput
+                    min={0}
+                    max={30}
+                    value={team1Filter.stl_min}
+                    onChange={(value) =>
+                        setTeam1Filter((prev) => ({
+                            ...prev,
+                            stl_min: Number(value)
+                        }))
+                    }
+                    label="Min"
+                    />
+                    <NumberInput
+                    min={0}
+                    max={30}
+                    value={team1Filter.stl_max}
+                    onChange={(value) =>
+                        setTeam1Filter((prev) => ({
+                            ...prev,
+                            stl_max: Number(value),
+                        }))
+                    }
+                    label="Max"
+                    />
+                </Group>
+                </Grid.Col>
+
+                <Grid.Col span={{ base: 12, sm: 6 }}>
+                <Text fw={600}>
+                    {filterType === "home-visitor"
+                        ? "Visiting Team Steals"
+                        : filterType === "winner-loser"
+                        ? "Losing Team Steals"
+                        : "Team 2 Steals"}
+                </Text>
+                {sliders && <RangeSlider
+                    minRange={0}
+                    max={30}
+                    color="blue"
+                    value={[team2Filter.stl_min!, team2Filter.stl_max!]}
+                    onChange={(value) =>
+                        setTeam2Filter((prev) => ({
+                            ...prev,
+                            stl_min: value[0],
+                            stl_max: value[1],
+                        }))
+                    }
+                    marks={[
+                    { value: 0, label: "0" },
+                    { value: 30, label: "30" },
+                    ]}
+                />}
+                <Group grow mt="xs">
+                    <NumberInput
+                    min={0}
+                    max={30}
+                    value={team2Filter.stl_min}
+                    onChange={(value) =>
+                        setTeam2Filter((prev) => ({
+                            ...prev,
+                            stl_min: Number(value)
+                        }))
+                    }
+                    label="Min"
+                    />
+                    <NumberInput
+                    min={0}
+                    max={30}
+                    value={team2Filter.stl_max}
+                    onChange={(value) =>
+                        setTeam2Filter((prev) => ({
+                            ...prev,
+                            stl_max: Number(value),
+                        }))
+                    }
+                    label="Max"
+                    />
+                </Group>
+                </Grid.Col>
+            </Grid>}
+            
+            {/* Blocks Filters */}
+            {activeFilters.includes("blocks") && <Grid className="filter-grid" gutter="md">
+                <Grid.Col span={{ base: 12, sm: 6 }}>
+                <Text fw={600}>
+                    {filterType === "home-visitor"
+                        ? "Home Team Blocks"
+                        : filterType === "winner-loser"
+                        ? "Winning Team Blocks"
+                        : "Team 1 Blocks"}
+                </Text>
+
+                {sliders &&<RangeSlider
+                    minRange={0}
+                    max={30}
+                    color="blue"
+                    value={[team1Filter.blk_min!, team1Filter.blk_max!]}
+                    onChange={(value) =>
+                        setTeam1Filter((prev) => ({
+                            ...prev,
+                            blk_min: value[0],
+                            blk_max: value[1],
+                        }))
+                    }
+                    marks={[
+                    { value: 0, label: "0" },
+                    { value: 30, label: "30" },
+                    ]}
+                />}
+                <Group grow mt="xs">
+                    <NumberInput
+                    min={0}
+                    max={30}
+                    value={team1Filter.blk_min}
+                    onChange={(value) =>
+                        setTeam1Filter((prev) => ({
+                            ...prev,
+                            blk_min: Number(value)
+                        }))
+                    }
+                    label="Min"
+                    />
+                    <NumberInput
+                    min={0}
+                    max={30}
+                    value={team1Filter.blk_max}
+                    onChange={(value) =>
+                        setTeam1Filter((prev) => ({
+                            ...prev,
+                            blk_max: Number(value),
+                        }))
+                    }
+                    label="Max"
+                    />
+                </Group>
+                </Grid.Col>
+
+                <Grid.Col span={{ base: 12, sm: 6 }}>
+                <Text fw={600}>
+                    {filterType === "home-visitor"
+                        ? "Visiting Team Blocks"
+                        : filterType === "winner-loser"
+                        ? "Losing Team Blocks"
+                        : "Team 2 Blocks"}
+                </Text>
+                {sliders && <RangeSlider
+                    minRange={0}
+                    max={30}
+                    color="blue"
+                    value={[team2Filter.blk_min!, team2Filter.blk_max!]}
+                    onChange={(value) =>
+                        setTeam2Filter((prev) => ({
+                            ...prev,
+                            blk_min: value[0],
+                            blk_max: value[1],
+                        }))
+                    }
+                    marks={[
+                    { value: 0, label: "0" },
+                    { value: 30, label: "30" },
+                    ]}
+                />}
+                <Group grow mt="xs">
+                    <NumberInput
+                    min={0}
+                    max={30}
+                    value={team2Filter.blk_min}
+                    onChange={(value) =>
+                        setTeam2Filter((prev) => ({
+                            ...prev,
+                            blk_min: Number(value)
+                        }))
+                    }
+                    label="Min"
+                    />
+                    <NumberInput
+                    min={0}
+                    max={30}
+                    value={team2Filter.blk_max}
+                    onChange={(value) =>
+                        setTeam2Filter((prev) => ({
+                            ...prev,
+                            blk_max: Number(value),
+                        }))
+                    }
+                    label="Max"
+                    />
+                </Group>
+                </Grid.Col>
+            </Grid>}
+            
+            {/* Turnovers Filters */}
+            {activeFilters.includes("turnovers") && <Grid className="filter-grid" gutter="md">
+                <Grid.Col span={{ base: 12, sm: 6 }}>
+                <Text fw={600}>
+                    {filterType === "home-visitor"
+                        ? "Home Team Turnovers"
+                        : filterType === "winner-loser"
+                        ? "Winning Team Turnovers"
+                        : "Team 1 Turnovers"}
+                </Text>
+
+                {sliders &&<RangeSlider
+                    minRange={0}
+                    max={40}
+                    color="blue"
+                    value={[team1Filter.to_min!, team1Filter.to_max!]}
+                    onChange={(value) =>
+                        setTeam1Filter((prev) => ({
+                            ...prev,
+                            to_min: value[0],
+                            to_max: value[1],
+                        }))
+                    }
+                    marks={[
+                    { value: 0, label: "0" },
+                    { value: 40, label: "40" },
+                    ]}
+                />}
+                <Group grow mt="xs">
+                    <NumberInput
+                    min={0}
+                    max={40}
+                    value={team1Filter.to_min}
+                    onChange={(value) =>
+                        setTeam1Filter((prev) => ({
+                            ...prev,
+                            to_min: Number(value)
+                        }))
+                    }
+                    label="Min"
+                    />
+                    <NumberInput
+                    min={0}
+                    max={40}
+                    value={team1Filter.to_max}
+                    onChange={(value) =>
+                        setTeam1Filter((prev) => ({
+                            ...prev,
+                            to_max: Number(value),
+                        }))
+                    }
+                    label="Max"
+                    />
+                </Group>
+                </Grid.Col>
+
+                <Grid.Col span={{ base: 12, sm: 6 }}>
+                <Text fw={600}>
+                    {filterType === "home-visitor"
+                        ? "Visiting Team Turnovers"
+                        : filterType === "winner-loser"
+                        ? "Losing Team Turnovers"
+                        : "Team 2 Turnovers"}
+                </Text>
+                {sliders && <RangeSlider
+                    minRange={0}
+                    max={40}
+                    color="blue"
+                    value={[team2Filter.to_min!, team2Filter.to_max!]}
+                    onChange={(value) =>
+                        setTeam2Filter((prev) => ({
+                            ...prev,
+                            to_min: value[0],
+                            to_max: value[1],
+                        }))
+                    }
+                    marks={[
+                    { value: 0, label: "0" },
+                    { value: 40, label: "40" },
+                    ]}
+                />}
+                <Group grow mt="xs">
+                    <NumberInput
+                    min={0}
+                    max={40}
+                    value={team2Filter.to_min}
+                    onChange={(value) =>
+                        setTeam2Filter((prev) => ({
+                            ...prev,
+                            to_min: Number(value)
+                        }))
+                    }
+                    label="Min"
+                    />
+                    <NumberInput
+                    min={0}
+                    max={40}
+                    value={team2Filter.to_max}
+                    onChange={(value) =>
+                        setTeam2Filter((prev) => ({
+                            ...prev,
+                            to_max: Number(value),
+                        }))
+                    }
+                    label="Max"
+                    />
+                </Group>
+                </Grid.Col>
+            </Grid>}
+
+            {activeFilters.length > 0 && <Button onClick={filter} mt="md">
+                Filter
+            </Button>}
+
+            {games.length > 0 &&<Text size="lg" fw={700} mt="xl" mb="sm">
                 Filtered Games
-            </Text>
+            </Text>}
 
             {/* Full width table */}
             {games.length > 0 && <Table striped highlightOnHover withTableBorder style={{ width: "100%" }}>

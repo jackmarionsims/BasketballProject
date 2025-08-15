@@ -40,3 +40,10 @@
 .read-the-docs {
   color: #888;
 }
+
+.filter-grid {
+  padding: var(--mantine-spacing-md);
+  border: 1px solid var(--mantine-color-gray-4);
+  border-radius: 8px;
+  margin: var(--mantine-spacing-md)
+}
