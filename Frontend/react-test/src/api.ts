@@ -70,8 +70,8 @@ export type FilterParams = {
     fouls_max?: number;
 
     // Turnovers
-    to_min?: number;
-    to_max?: number;
+    tov_min?: number;
+    tov_max?: number;
 };
 export async function getTeam(teamName: string, season: number) {
     const res = await fetch(`${BASE_URL}/${teamName}?season=${season}`);
@@ -95,17 +95,24 @@ export async function getFilteredGames(
     filterType: string,
     marginFilter?: FilterParams,
 ) {
+
     const params = new URLSearchParams();
     // Append home_filter fields
     for (const [key, value] of Object.entries(filter1)) {
-        if (value !== undefined) {
+        if (key.includes("pct")) {
+            params.append(`team1_${key}`, String(value/100));
+        }
+        else if (value !== undefined) {
             params.append(`team1_${key}`, String(value));
         }
     }
 
     // Append visitor_filter fields
     for (const [key, value] of Object.entries(filter2)) {
-        if (value !== undefined) {
+        if (key.includes("pct")) {
+            params.append(`team2_${key}`, String(value/100));
+        }
+        else if (value !== undefined) {
             params.append(`team2_${key}`, String(value));
         }
     }

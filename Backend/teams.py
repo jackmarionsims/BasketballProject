@@ -2,6 +2,7 @@ from typing import Annotated, Optional
 from enum import Enum
 from fastapi import FastAPI, Query, HTTPException, Path, Depends
 from pydantic import BaseModel, Field, AfterValidator,  model_validator, ConfigDict
+from typing import Dict, Any
 import pandas as pd
 from datetime import datetime
 
@@ -39,7 +40,7 @@ class NBAName(Enum):
     MEMPHIS_GRIZZLIES = 'Memphis Grizzlies'
     NEW_ORLEANS_HORNETS = 'New Orleans Hornets'
     CHARLOTTE_BOBCATS = 'Charlotte Bobcats'
-    NEW_ORLEANS_OKLAHOMA_CITY_HORNETS = 'New Orleans/Oklahoma City Hornets'
+    OKLAHOMA_CITY_HORNETS = 'Oklahoma City Hornets'
     OKLAHOMA_CITY_THUNDER = 'Oklahoma City Thunder'
     BROOKLYN_NETS = 'Brooklyn Nets'
     NEW_ORLEANS_PELICANS = 'New Orleans Pelicans'
@@ -54,6 +55,7 @@ class Date(BaseModel):
 
     def to_number(self):
         try:
+            
             # Try full month name first (e.g., "August")
             try:
                 month_number = datetime.strptime(self.month, "%B").month
@@ -79,10 +81,6 @@ class ScheduledGame(BaseModel):
     date: Date
     playoff: bool
 
-from typing import Dict, Any
-from pydantic import BaseModel, ConfigDict, model_validator
-import pandas as pd
-
 class BoxScore(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -90,18 +88,24 @@ class BoxScore(BaseModel):
 
     @model_validator(mode="after")
     def validate_box_score(self) -> "BoxScore":
-        required = [  # same required columns
-            'Visitor Team', 'Visitor Team Points', 'Home Team', 'Home Team Points', 'Winner', 'Loser', 'Home Win',
-            'Home Team Assists', 'Home Team Tot Rebounds', 'Home Team Off Rebounds', 'Home Team Def Rebounds',
-            'Home Team Blocks', 'Home Team Steals', 'Home Team FGA', 'Home Team FGM', 'Home Team FG%',
-            'Home Team 3PA', 'Home Team 3PM', 'Home Team 3P%', 'Home Team FTA', 'Home Team FTM', 'Home Team FT%',
-            'Home Team Fouls', 'Home Team TO', 'Visitor Team Assists', 'Visitor Team Tot Rebounds',
-            'Visitor Team Off Rebounds', 'Visitor Team Def Rebounds', 'Visitor Team Blocks', 'Visitor Team Steals',
-            'Visitor Team FGA', 'Visitor Team FGM', 'Visitor Team FG%', 'Visitor Team 3PA', 'Visitor Team 3PM',
-            'Visitor Team 3P%', 'Visitor Team FTA', 'Visitor Team FTM', 'Visitor Team FT%', 'Visitor Team Fouls',
-            'Visitor Team TO', 'Home Team ORB%', 'Visitor Team ORB%', 'Home Team TO%', 'Visitor Team TO%',
-            'Home Team FTM/FGA', 'Visitor Team FTM/FGA', 'Home Team TS%', 'Visitor Team TS%'
+        required = [
+            'Home Team', 'Visitor Team', 'Winner', 'Loser', 
+            'Home Win', 'Home Team PTS', 'Home Team AST', 
+            'Home Team TRB', 'Home Team ORB', 'Home Team DRB', 
+            'Home Team BLK', 'Home Team STL', 'Home Team FGA', 
+            'Home Team FG', 'Home Team FG%', 'Home Team 3PA', 
+            'Home Team 3P', 'Home Team 3P%', 'Home Team FTA', 
+            'Home Team FT', 'Home Team FT%', 'Home Team PF', 
+            'Home Team TOV', 'Visitor Team PTS', 'Visitor Team AST', 
+            'Visitor Team TRB', 'Visitor Team ORB', 'Visitor Team DRB', 
+            'Visitor Team BLK', 'Visitor Team STL', 'Visitor Team FGA', 
+            'Visitor Team FG', 'Visitor Team FG%', 'Visitor Team 3PA', 
+            'Visitor Team 3P', 'Visitor Team 3P%', 'Visitor Team FTA', 
+            'Visitor Team FT', 'Visitor Team FT%', 'Visitor Team PF', 
+            'Visitor Team TOV'
         ]
+        # next = ['Home Team ORB%', 'Visitor Team ORB%', 'Home Team TO%', 'Visitor Team TO%',
+        #     'Home Team FTM/FGA', 'Visitor Team FTM/FGA', 'Home Team TS%', 'Visitor Team TS%']
 
         missing = set(required) - set(self.box_score.keys())
         if missing:
@@ -120,7 +124,59 @@ class PregameStats(BaseModel):
 
     @model_validator(mode="after")
     def validate_pgs(self) -> "PregameStats":
-        required = ['Home Team', 'Visitor Team', 'Home Team Points Avg', 'Visitor Team Points Avg', 'Home Team Opp Points Avg', 'Visitor Team Opp Points Avg', 'Home Team Assists Avg', 'Visitor Team Assists Avg', 'Home Team Tot Rebounds Avg', 'Visitor Team Tot Rebounds Avg', 'Home Team Off Rebounds Avg', 'Visitor Team Off Rebounds Avg', 'Home Team Def Rebounds Avg', 'Visitor Team Def Rebounds Avg', 'Home Team Blocks Avg', 'Visitor Team Blocks Avg', 'Home Team Steals Avg', 'Visitor Team Steals Avg', 'Home Team FGA Avg', 'Visitor Team FGA Avg', 'Home Team FGM Avg', 'Visitor Team FGM Avg', 'Home Team FG% Avg', 'Visitor Team FG% Avg', 'Home Team 3PA Avg', 'Visitor Team 3PA Avg', 'Home Team 3PM Avg', 'Visitor Team 3PM Avg', 'Home Team 3P% Avg', 'Visitor Team 3P% Avg', 'Home Team FTA Avg', 'Visitor Team FTA Avg', 'Home Team FTM Avg', 'Visitor Team FTM Avg', 'Home Team FT% Avg', 'Visitor Team FT% Avg', 'Home Team Fouls Avg', 'Visitor Team Fouls Avg', 'Home Team TO Avg', 'Visitor Team TO Avg', 'Home Team ORB% Avg', 'Visitor Team ORB% Avg', 'Home Team TO% Avg', 'Visitor Team TO% Avg', 'Home Team FTM/FGA Avg', 'Visitor Team FTM/FGA Avg', 'Home Team TS% Avg', 'Visitor Team TS% Avg', 'Home Team Opp Assists Avg', 'Visitor Team Opp Assists Avg', 'Home Team Opp Tot Rebounds Avg', 'Visitor Team Opp Tot Rebounds Avg', 'Home Team Opp Off Rebounds Avg', 'Visitor Team Opp Off Rebounds Avg', 'Home Team Opp Def Rebounds Avg', 'Visitor Team Opp Def Rebounds Avg', 'Home Team Opp Blocks Avg', 'Visitor Team Opp Blocks Avg', 'Home Team Opp Steals Avg', 'Visitor Team Opp Steals Avg', 'Home Team Opp FGA Avg', 'Visitor Team Opp FGA Avg', 'Home Team Opp FGM Avg', 'Visitor Team Opp FGM Avg', 'Home Team Opp FG% Avg', 'Visitor Team Opp FG% Avg', 'Home Team Opp 3PA Avg', 'Visitor Team Opp 3PA Avg', 'Home Team Opp 3PM Avg', 'Visitor Team Opp 3PM Avg', 'Home Team Opp 3P% Avg', 'Visitor Team Opp 3P% Avg', 'Home Team Opp FTA Avg', 'Visitor Team Opp FTA Avg', 'Home Team Opp FTM Avg', 'Visitor Team Opp FTM Avg', 'Home Team Opp FT% Avg', 'Visitor Team Opp FT% Avg', 'Home Team Opp Fouls Avg', 'Visitor Team Opp Fouls Avg', 'Home Team Opp TO Avg', 'Visitor Team Opp TO Avg', 'Home Team Opp ORB% Avg', 'Visitor Team Opp ORB% Avg', 'Home Team Opp TO% Avg', 'Visitor Team Opp TO% Avg', 'Home Team Opp FTM/FGA Avg', 'Visitor Team Opp FTM/FGA Avg', 'Home Team Opp TS% Avg', 'Visitor Team Opp TS% Avg', 'Home Team W', "Home Team L", "Visitor Team W", "Visitor Team L", "Home Team W/L%", "Visitor Team W/L%", "Playoff Game", "Home Team ELO", "Visitor Team ELO", 'Date Number', 'Year', 'Date']
+        required = [
+            'Game ID', 'Date Number', 'Date', 'Game Type', 
+            'Home Team', 'Visitor Team', 'Playoff Game', 'Season', 
+            'Home Team PTS Avg', 'Visitor Team PTS Avg', 
+            'Home Team Opp PTS Avg', 'Visitor Team Opp PTS Avg', 
+            'Home Team AST Avg', 'Visitor Team AST Avg', 
+            'Home Team Opp AST Avg', 'Visitor Team Opp AST Avg', 
+            'Home Team TRB Avg', 'Visitor Team TRB Avg', 
+            'Home Team Opp TRB Avg', 'Visitor Team Opp TRB Avg', 
+            'Home Team ORB Avg', 'Visitor Team ORB Avg', 
+            'Home Team Opp ORB Avg', 'Visitor Team Opp ORB Avg', 
+            'Home Team DRB Avg', 'Visitor Team DRB Avg', 
+            'Home Team Opp DRB Avg', 'Visitor Team Opp DRB Avg', 
+            'Home Team BLK Avg', 'Visitor Team BLK Avg', 
+            'Home Team Opp BLK Avg', 'Visitor Team Opp BLK Avg', 
+            'Home Team STL Avg', 'Visitor Team STL Avg', 
+            'Home Team Opp STL Avg', 'Visitor Team Opp STL Avg', 
+            'Home Team FGA Avg', 'Visitor Team FGA Avg', 
+            'Home Team Opp FGA Avg', 'Visitor Team Opp FGA Avg', 
+            'Home Team FG Avg', 'Visitor Team FG Avg', 
+            'Home Team Opp FG Avg', 'Visitor Team Opp FG Avg', 
+            'Home Team FG% Avg', 'Visitor Team FG% Avg', 
+            'Home Team Opp FG% Avg', 'Visitor Team Opp FG% Avg', 
+            'Home Team 3PA Avg', 'Visitor Team 3PA Avg', 
+            'Home Team Opp 3PA Avg', 'Visitor Team Opp 3PA Avg', 
+            'Home Team 3P Avg', 'Visitor Team 3P Avg', 
+            'Home Team Opp 3P Avg', 'Visitor Team Opp 3P Avg', 
+            'Home Team 3P% Avg', 'Visitor Team 3P% Avg', 
+            'Home Team Opp 3P% Avg', 'Visitor Team Opp 3P% Avg', 
+            'Home Team FTA Avg', 'Visitor Team FTA Avg', 
+            'Home Team Opp FTA Avg', 'Visitor Team Opp FTA Avg', 
+            'Home Team FT Avg', 'Visitor Team FT Avg', 
+            'Home Team Opp FT Avg', 'Visitor Team Opp FT Avg', 
+            'Home Team FT% Avg', 'Visitor Team FT% Avg', 
+            'Home Team Opp FT% Avg', 'Visitor Team Opp FT% Avg', 
+            'Home Team PF Avg', 'Visitor Team PF Avg', 
+            'Home Team Opp PF Avg', 'Visitor Team Opp PF Avg', 
+            'Home Team TOV Avg', 'Visitor Team TOV Avg', 
+            'Home Team Opp TOV Avg', 'Visitor Team Opp TOV Avg', 
+            'Home Team ELO', 'Visitor Team ELO', 
+            'Home Team Total Games', 'Home Team W', 'Home Team L', 
+            'Home Team W/L%', 'Visitor Team Total Games', 
+            'Visitor Team W', 'Visitor Team L', 'Visitor Team W/L%', 
+            'Home Team Tot Season EFF Avg', 'Home Team Tot Career EFF Avg', 
+            'Visitor Team Tot Season EFF Avg', 'Visitor Team Tot Career EFF Avg'
+        ]
+        # next = ['Home Team Opp ORB% Avg', 'Visitor Team Opp ORB% Avg', 
+        #             'Home Team Opp TO% Avg', 'Visitor Team Opp TO% Avg', 
+        #             'Home Team Opp FTM/FGA Avg', 'Visitor Team Opp FTM/FGA Avg', 
+        #             'Home Team Opp TS% Avg', 'Visitor Team Opp TS% Avg', 'Home Team ORB% Avg', 'Visitor Team ORB% Avg', 
+        #             'Home Team TO% Avg', 'Visitor Team TO% Avg', 
+        #             'Home Team FTM/FGA Avg', 'Visitor Team FTM/FGA Avg', 
+        #             'Home Team TS% Avg', 'Visitor Team TS% Avg', ]
 
         missing = set(required) - set(self.pgs.keys())
         if missing:
@@ -210,8 +266,8 @@ class FilterParams(BaseModel):
     fouls_max: Optional[int] = None
 
     # Turnovers
-    to_min: Optional[int] = None
-    to_max: Optional[int] = None
+    tov_min: Optional[int] = None
+    tov_max: Optional[int] = None
 
 
 def get_filter1(
@@ -249,8 +305,8 @@ def get_filter1(
     ft_pct_max: Optional[float] = Query(None, alias="team1_ft_pct_max"),
     fouls_min: Optional[int] = Query(None, alias="team1_fouls_min"),
     fouls_max: Optional[int] = Query(None, alias="team1_fouls_max"),
-    to_min: Optional[int] = Query(None, alias="team1_to_min"),
-    to_max: Optional[int] = Query(None, alias="team1_to_max")
+    tov_min: Optional[int] = Query(None, alias="team1_tov_min"),
+    tov_max: Optional[int] = Query(None, alias="team1_tov_max")
 ) -> FilterParams:
     return FilterParams(
         pts_min=pts_min, pts_max=pts_max,
@@ -270,7 +326,7 @@ def get_filter1(
         ftm_min=ftm_min, ftm_max=ftm_max,
         ft_pct_min=ft_pct_min, ft_pct_max=ft_pct_max,
         fouls_min=fouls_min, fouls_max=fouls_max,
-        to_min=to_min, to_max=to_max
+        tov_min=tov_min, tov_max=tov_max
     )
 
 
@@ -309,8 +365,8 @@ def get_filter2(
     ft_pct_max: Optional[float] = Query(None, alias="team2_ft_pct_max"),
     fouls_min: Optional[int] = Query(None, alias="team2_fouls_min"),
     fouls_max: Optional[int] = Query(None, alias="team2_fouls_max"),
-    to_min: Optional[int] = Query(None, alias="team2_to_min"),
-    to_max: Optional[int] = Query(None, alias="team2_to_max")
+    tov_min: Optional[int] = Query(None, alias="team2_tov_min"),
+    tov_max: Optional[int] = Query(None, alias="team2_tov_max")
 ) -> FilterParams:
     return FilterParams(
         pts_min=pts_min, pts_max=pts_max,
@@ -330,7 +386,7 @@ def get_filter2(
         ftm_min=ftm_min, ftm_max=ftm_max,
         ft_pct_min=ft_pct_min, ft_pct_max=ft_pct_max,
         fouls_min=fouls_min, fouls_max=fouls_max,
-        to_min=to_min, to_max=to_max
+        tov_min=tov_min, tov_max=tov_max
     )
 # class BoxScore(BaseModel):
 #     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -441,18 +497,76 @@ def get_filter2(
 
 def row_to_completed_game(row: pd.DataFrame):
     bs_df = row[[
-            'Visitor Team', 'Visitor Team Points', 'Home Team', 'Home Team Points', 'Winner', 'Loser', 'Home Win',
-            'Home Team Assists', 'Home Team Tot Rebounds', 'Home Team Off Rebounds', 'Home Team Def Rebounds',
-            'Home Team Blocks', 'Home Team Steals', 'Home Team FGA', 'Home Team FGM', 'Home Team FG%',
-            'Home Team 3PA', 'Home Team 3PM', 'Home Team 3P%', 'Home Team FTA', 'Home Team FTM', 'Home Team FT%',
-            'Home Team Fouls', 'Home Team TO', 'Visitor Team Assists', 'Visitor Team Tot Rebounds',
-            'Visitor Team Off Rebounds', 'Visitor Team Def Rebounds', 'Visitor Team Blocks', 'Visitor Team Steals',
-            'Visitor Team FGA', 'Visitor Team FGM', 'Visitor Team FG%', 'Visitor Team 3PA', 'Visitor Team 3PM',
-            'Visitor Team 3P%', 'Visitor Team FTA', 'Visitor Team FTM', 'Visitor Team FT%', 'Visitor Team Fouls',
-            'Visitor Team TO', 'Home Team ORB%', 'Visitor Team ORB%', 'Home Team TO%', 'Visitor Team TO%',
-            'Home Team FTM/FGA', 'Visitor Team FTM/FGA', 'Home Team TS%', 'Visitor Team TS%'
-        ]]
-    pgs_df = row[['Home Team', 'Visitor Team', 'Home Team Points Avg', 'Visitor Team Points Avg', 'Home Team Opp Points Avg', 'Visitor Team Opp Points Avg', 'Home Team Assists Avg', 'Visitor Team Assists Avg', 'Home Team Tot Rebounds Avg', 'Visitor Team Tot Rebounds Avg', 'Home Team Off Rebounds Avg', 'Visitor Team Off Rebounds Avg', 'Home Team Def Rebounds Avg', 'Visitor Team Def Rebounds Avg', 'Home Team Blocks Avg', 'Visitor Team Blocks Avg', 'Home Team Steals Avg', 'Visitor Team Steals Avg', 'Home Team FGA Avg', 'Visitor Team FGA Avg', 'Home Team FGM Avg', 'Visitor Team FGM Avg', 'Home Team FG% Avg', 'Visitor Team FG% Avg', 'Home Team 3PA Avg', 'Visitor Team 3PA Avg', 'Home Team 3PM Avg', 'Visitor Team 3PM Avg', 'Home Team 3P% Avg', 'Visitor Team 3P% Avg', 'Home Team FTA Avg', 'Visitor Team FTA Avg', 'Home Team FTM Avg', 'Visitor Team FTM Avg', 'Home Team FT% Avg', 'Visitor Team FT% Avg', 'Home Team Fouls Avg', 'Visitor Team Fouls Avg', 'Home Team TO Avg', 'Visitor Team TO Avg', 'Home Team ORB% Avg', 'Visitor Team ORB% Avg', 'Home Team TO% Avg', 'Visitor Team TO% Avg', 'Home Team FTM/FGA Avg', 'Visitor Team FTM/FGA Avg', 'Home Team TS% Avg', 'Visitor Team TS% Avg', 'Home Team Opp Assists Avg', 'Visitor Team Opp Assists Avg', 'Home Team Opp Tot Rebounds Avg', 'Visitor Team Opp Tot Rebounds Avg', 'Home Team Opp Off Rebounds Avg', 'Visitor Team Opp Off Rebounds Avg', 'Home Team Opp Def Rebounds Avg', 'Visitor Team Opp Def Rebounds Avg', 'Home Team Opp Blocks Avg', 'Visitor Team Opp Blocks Avg', 'Home Team Opp Steals Avg', 'Visitor Team Opp Steals Avg', 'Home Team Opp FGA Avg', 'Visitor Team Opp FGA Avg', 'Home Team Opp FGM Avg', 'Visitor Team Opp FGM Avg', 'Home Team Opp FG% Avg', 'Visitor Team Opp FG% Avg', 'Home Team Opp 3PA Avg', 'Visitor Team Opp 3PA Avg', 'Home Team Opp 3PM Avg', 'Visitor Team Opp 3PM Avg', 'Home Team Opp 3P% Avg', 'Visitor Team Opp 3P% Avg', 'Home Team Opp FTA Avg', 'Visitor Team Opp FTA Avg', 'Home Team Opp FTM Avg', 'Visitor Team Opp FTM Avg', 'Home Team Opp FT% Avg', 'Visitor Team Opp FT% Avg', 'Home Team Opp Fouls Avg', 'Visitor Team Opp Fouls Avg', 'Home Team Opp TO Avg', 'Visitor Team Opp TO Avg', 'Home Team Opp ORB% Avg', 'Visitor Team Opp ORB% Avg', 'Home Team Opp TO% Avg', 'Visitor Team Opp TO% Avg', 'Home Team Opp FTM/FGA Avg', 'Visitor Team Opp FTM/FGA Avg', 'Home Team Opp TS% Avg', 'Visitor Team Opp TS% Avg', 'Home Team W', "Home Team L", "Visitor Team W", "Visitor Team L", "Home Team W/L%", "Visitor Team W/L%", "Playoff Game", "Home Team ELO", "Visitor Team ELO", 'Date Number', 'Year', 'Date']]
+        'Home Team', 'Visitor Team', 'Winner', 'Loser', 
+        'Home Win', 'Home Team PTS', 'Home Team AST', 
+        'Home Team TRB', 'Home Team ORB', 'Home Team DRB', 
+        'Home Team BLK', 'Home Team STL', 'Home Team FGA', 
+        'Home Team FG', 'Home Team FG%', 'Home Team 3PA', 
+        'Home Team 3P', 'Home Team 3P%', 'Home Team FTA', 
+        'Home Team FT', 'Home Team FT%', 'Home Team PF', 
+        'Home Team TOV', 'Visitor Team PTS', 'Visitor Team AST', 
+        'Visitor Team TRB', 'Visitor Team ORB', 'Visitor Team DRB', 
+        'Visitor Team BLK', 'Visitor Team STL', 'Visitor Team FGA', 
+        'Visitor Team FG', 'Visitor Team FG%', 'Visitor Team 3PA', 
+        'Visitor Team 3P', 'Visitor Team 3P%', 'Visitor Team FTA', 
+        'Visitor Team FT', 'Visitor Team FT%', 'Visitor Team PF', 
+        'Visitor Team TOV'
+    ]]
+    # next =['Home Team ORB%', 'Visitor Team ORB%', 'Home Team TO%', 'Visitor Team TO%',
+    #         'Home Team FTM/FGA', 'Visitor Team FTM/FGA', 'Home Team TS%', 'Visitor Team TS%']
+    pgs_df = row[[
+        'Game ID', 'Date Number', 'Date', 'Game Type', 
+        'Home Team', 'Visitor Team', 'Playoff Game', 'Season', 
+        'Home Team PTS Avg', 'Visitor Team PTS Avg', 
+        'Home Team Opp PTS Avg', 'Visitor Team Opp PTS Avg', 
+        'Home Team AST Avg', 'Visitor Team AST Avg', 
+        'Home Team Opp AST Avg', 'Visitor Team Opp AST Avg', 
+        'Home Team TRB Avg', 'Visitor Team TRB Avg', 
+        'Home Team Opp TRB Avg', 'Visitor Team Opp TRB Avg', 
+        'Home Team ORB Avg', 'Visitor Team ORB Avg', 
+        'Home Team Opp ORB Avg', 'Visitor Team Opp ORB Avg', 
+        'Home Team DRB Avg', 'Visitor Team DRB Avg', 
+        'Home Team Opp DRB Avg', 'Visitor Team Opp DRB Avg', 
+        'Home Team BLK Avg', 'Visitor Team BLK Avg', 
+        'Home Team Opp BLK Avg', 'Visitor Team Opp BLK Avg', 
+        'Home Team STL Avg', 'Visitor Team STL Avg', 
+        'Home Team Opp STL Avg', 'Visitor Team Opp STL Avg', 
+        'Home Team FGA Avg', 'Visitor Team FGA Avg', 
+        'Home Team Opp FGA Avg', 'Visitor Team Opp FGA Avg', 
+        'Home Team FG Avg', 'Visitor Team FG Avg', 
+        'Home Team Opp FG Avg', 'Visitor Team Opp FG Avg', 
+        'Home Team FG% Avg', 'Visitor Team FG% Avg', 
+        'Home Team Opp FG% Avg', 'Visitor Team Opp FG% Avg', 
+        'Home Team 3PA Avg', 'Visitor Team 3PA Avg', 
+        'Home Team Opp 3PA Avg', 'Visitor Team Opp 3PA Avg', 
+        'Home Team 3P Avg', 'Visitor Team 3P Avg', 
+        'Home Team Opp 3P Avg', 'Visitor Team Opp 3P Avg', 
+        'Home Team 3P% Avg', 'Visitor Team 3P% Avg', 
+        'Home Team Opp 3P% Avg', 'Visitor Team Opp 3P% Avg', 
+        'Home Team FTA Avg', 'Visitor Team FTA Avg', 
+        'Home Team Opp FTA Avg', 'Visitor Team Opp FTA Avg', 
+        'Home Team FT Avg', 'Visitor Team FT Avg', 
+        'Home Team Opp FT Avg', 'Visitor Team Opp FT Avg', 
+        'Home Team FT% Avg', 'Visitor Team FT% Avg', 
+        'Home Team Opp FT% Avg', 'Visitor Team Opp FT% Avg', 
+        'Home Team PF Avg', 'Visitor Team PF Avg', 
+        'Home Team Opp PF Avg', 'Visitor Team Opp PF Avg', 
+        'Home Team TOV Avg', 'Visitor Team TOV Avg', 
+        'Home Team Opp TOV Avg', 'Visitor Team Opp TOV Avg', 
+        'Home Team ELO', 'Visitor Team ELO', 
+        'Home Team Total Games', 'Home Team W', 'Home Team L', 
+        'Home Team W/L%', 'Visitor Team Total Games', 
+        'Visitor Team W', 'Visitor Team L', 'Visitor Team W/L%', 
+        'Home Team Tot Season EFF Avg', 'Home Team Tot Career EFF Avg', 
+        'Visitor Team Tot Season EFF Avg', 'Visitor Team Tot Career EFF Avg'
+    ]]
+    # next = ['Home Team Opp ORB% Avg', 'Visitor Team Opp ORB% Avg', 
+    #                 'Home Team Opp TO% Avg', 'Visitor Team Opp TO% Avg', 
+    #                 'Home Team Opp FTM/FGA Avg', 'Visitor Team Opp FTM/FGA Avg', 
+    #                 'Home Team Opp TS% Avg', 'Visitor Team Opp TS% Avg',  'Home Team ORB% Avg', 'Visitor Team ORB% Avg', 
+    #                 'Home Team TO% Avg', 'Visitor Team TO% Avg', 
+    #                 'Home Team FTM/FGA Avg', 'Visitor Team FTM/FGA Avg', 
+    #                 'Home Team TS% Avg', 'Visitor Team TS% Avg']
     box_score = BoxScore(box_score=bs_df.iloc[0].to_dict())
     pgs = PregameStats(pgs=pgs_df.iloc[0].to_dict())
     return CompletedGame(box_score=box_score, pregame_stats=pgs)
@@ -465,7 +579,7 @@ def calculate_rolling_stat_per_year(df, stat_col, date_col="Date Number"):
     visitor_opp_averages = []
 
     # Process year by year
-    for year, group in df.groupby("Year"):
+    for year, group in df.groupby("Season"):
         stat_dict = {}  # Reset each year
         opp_stat_dict = {}
         for idx, row in group.sort_values(date_col).iterrows():
@@ -537,19 +651,21 @@ def calculate_avgs_for_team(df: pd.DataFrame, game: ScheduledGame, team_elos:  d
     "Visitor Team": visitor.value,
     "Date": game.date.to_str(),
     "Date Number": game.date.to_number(),
-    "Year": game.date.season,
+    "Season": game.date.season,
     "Playoff Game": 1 if game.playoff else 0,
     "Home Team ELO": team_elos[(home, game.date.season)],
     "Visitor Team ELO": team_elos[(visitor, game.date.season)],
     }])
     stat_dict = {}
     opp_stat_dict = {}
-    cols = ['Points', 'Assists', 'Tot Rebounds', 'Off Rebounds', 
-              'Def Rebounds', 'Blocks', 'Steals', 
-              'FGA', 'FGM', 'FG%', '3PA', 
-              '3PM', '3P%', 'FTA', 'FTM', 
-              'FT%', 'Fouls', 'TO', 
-              "ORB%", "TO%", "FTM/FGA", "TS%"]
+    cols = [
+        'PTS', 'AST', 'TRB', 'ORB', 
+        'DRB', 'BLK', 'STL', 
+        'FGA', 'FG', 'FG%', '3PA', 
+        '3P', '3P%', 'FTA', 'FT', 
+        'FT%', 'Fouls', 'TOV'
+    ]
+    # next = "ORB%", "TO%", "FTM/FGA", "TS%"
     for stat_col in cols:
         for idx, row in df.iterrows():
             home_team = row["Home Team"]
@@ -640,7 +756,7 @@ def calculate_avgs_for_team(df: pd.DataFrame, game: ScheduledGame, team_elos:  d
 def add_scheduled_game(df: pd.DataFrame, game: ScheduledGame, team_elos:  dict[tuple[NBAName, int], float]) -> pd.DataFrame:
     season = game.date.season
     date_num = game.date.to_number()
-    previous_games = df[(df["Year"] == season) & (df["Date Number"] < date_num)]
+    previous_games = df[(df["Season"] == season) & (df["Date Number"] < date_num)]
     pgs = calculate_avgs_for_team(previous_games, game, team_elos)
     df = pd.concat([df, pgs.to_row()], ignore_index=True)
     return df
@@ -696,9 +812,9 @@ def get_all_elos(df: pd.DataFrame, team_elos: dict[tuple[NBAName, int], float], 
     for idx, game in df.iterrows():
         home_team = NBAName(game["Home Team"])
         visitor_team = NBAName(game["Visitor Team"])
-        year = game["Year"]
+        year = game["Season"]
         date_number = game["Date Number"]
-        margin = game["Home Team Points"] - game["Visitor Team Points"]
+        margin = game["Home Team PTS"] - game["Visitor Team PTS"]
 
         # Get raw (unadjusted) Elo from previous year or base
         raw_home_elo = team_elos.get((home_team, year - 1), base_elo)

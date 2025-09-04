@@ -2,6 +2,7 @@ import { useParams } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { Table, Text, Title, Loader, Center, Paper, Container } from "@mantine/core";
 import { getGame } from './api'
+import { formatDate } from './FilteredGames';
 
 export default function GameDetails() {
     const { gameId } = useParams();
@@ -45,7 +46,8 @@ export default function GameDetails() {
         }
         console.log(groupedStats)
     });
-    for (const key of ["3P%", "FG%", "FT%", "ORB%", "TO%", "FTM/FGA", "TS%"]){
+    for (const key of ["3P%", "FG%", "FT%"]){ // "ORB%", "TO%", "FTM/FGA", "TS%"
+        
         groupedStats[key].Home = groupedStats[key].Home.toFixed(2)
         groupedStats[key].Visitor = groupedStats[key].Visitor.toFixed(2)
     }
@@ -57,7 +59,7 @@ export default function GameDetails() {
                 {pregame["Visitor Team"]} @ {pregame["Home Team"]}
             </Title>
             <Title order={3}>
-                {pregame.Year - 1}-{pregame.Year} : {pregame.Date}
+                {pregame.Season - 1}-{pregame.Season} : {formatDate(pregame.Date)}
             </Title>
 
             {/* Box Score Table */}

@@ -13,34 +13,32 @@ predictors = ['W/L% Diff Z-Score', 'Avg Points Margin Diff Z-Score', 'Avg TS% Ma
 'Total Starters Season EFF Diff']
 predictors = ['W/L% Diff Z-Score', 'Avg Points Margin Diff Z-Score', 'Avg TS% Margin Diff Z-Score', 'Location ELO Diff Z-Score', 'Avg FGM Margin Diff Z-Score', 'Avg FG% Margin Diff Z-Score', 'Total Starters Career EFF Diff',
 'Total Starters Season EFF Diff']
-predictors = ["Visitor Team Points Avg",
-        "Home Team Points Avg", "Home Team Assists Avg", "Home Team Tot Rebounds Avg", "Home Team Off Rebounds Avg", "Home Team Def Rebounds Avg",
-        "Visitor Team Assists Avg", "Visitor Team Tot Rebounds Avg",
-        "Visitor Team Off Rebounds Avg", "Visitor Team Def Rebounds Avg",
-        "Home Team Home ELO","Visitor Team ELO", "Home Team W/L%",
-        "Visitor Team W/L%",]
-df = pd.read_csv("csvs/team_effs.csv")
-df = pd.read_csv("csvs/all_games2.csv")
+predictors = ['PTS Margin', 'W/L% Margin', 'ELO Margin',
+              'Tot Season EFF Avg Margin', "Home Team PTS Avg", "Visitor Team PTS Avg"]
+df = pd.read_csv("csvs/model_categories.csv")
+# df["PTS Margin"] = df["PTS Avg Margin"] - df["Opp PTS Avg Margin"]
+df["PTS Margin"] = df["Home Team PTS Margin Avg"] - df["Visitor Team PTS Margin Avg"]
+# df = pd.read_csv("csvs/all_games2.csv")
 # Assume you have columns 'Home Points' and 'Visitor Points' in your df
 home_model = XGBRegressor()
 visitor_model = XGBRegressor()
 
 # Use the same predictor variables
 X = df[predictors]
-y_home = df["Home Team Points"]
-y_visitor = df["Visitor Team Points"]
+y_home = df["Home Team PTS"]
+y_visitor = df["Visitor Team PTS"]
 years = range(1991, 2026)
 for year in years:
-    all_train = df[df["Year"] < year]
-    all_test = df[df["Year"] == year]
+    all_train = df[df["Season"] < year]
+    all_test = df[df["Season"] == year]
 
     X_train = all_train[predictors]
-    y_home_train = all_train["Home Team Points"]
-    y_visitor_train = all_train["Visitor Team Points"]
+    y_home_train = all_train["Home Team PTS"]
+    y_visitor_train = all_train["Visitor Team PTS"]
 
     X_test = all_test[predictors]
-    y_home_test = all_test["Home Team Points"]
-    y_visitor_test = all_test["Visitor Team Points"]
+    y_home_test = all_test["Home Team PTS"]
+    y_visitor_test = all_test["Visitor Team PTS"]
 
     home_model.fit(X_train, y_home_train)
     visitor_model.fit(X_train, y_visitor_train)
@@ -77,11 +75,11 @@ for year in years:
 
     # Combine results with test data
     all_test = all_test.copy()
-    preds = all_test[["Visitor Team", "Home Team", "Visitor Points", "Home Points"]]
-    preds["Predicted Visitor Score"] = visitor_rounded
-    preds["Predicted Home Score"] = home_rounded
-    preds["Date Number"] = all_test["Date Number"]
-    preds["Year"] = all_test["Year"]
+    preds = all_test[["Visitor Team", "Home Team", "Visitor Team PTS", "Home Team PTS"]].copy()
+    preds["Predicted Visitor Score"] = visitor_rounded.copy()
+    preds["Predicted Home Score"] = home_rounded.copy()
+    preds["Date Number"] = all_test["Date Number"].copy()
+    preds["Season"] = all_test["Season"].copy()
 
     # Optional: save predictions each year
     if year == years[0]:
@@ -91,6 +89,6 @@ for year in years:
 
 # Save all predictions
 predicted_wins = [1 if row["Predicted Home Score"] > row["Predicted Visitor Score"] else 0 for _, row in all_predictions.iterrows()]
-# years_predicted = df[df["Year"] >= 1996]
-# print(accuracy_score(years_predicted["Home Win"], predicted_wins ))
+years_predicted = df[df["Season"] >= 1991]
+print(accuracy_score(years_predicted["Home Win"], predicted_wins ))
 # all_predictions.to_csv("score_predictions.csv", index=False)
