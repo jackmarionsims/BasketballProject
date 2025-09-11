@@ -574,17 +574,13 @@ async def get_team(
     season: Annotated[int, Query(title="The season to access")] = 2025
 ):
     global finished_games
-    season_games = finished_games[finished_games["Year"] == season]
+    season_games = finished_games[finished_games["Season"] == season]
     team_games = season_games[
         (season_games["Home Team"] == team_name) |
         (season_games["Visitor Team"] == team_name)
     ]
     if not team_games.empty:
-        # Option 1: list of dicts
         return team_games.to_dict(orient="records")
-
-        # Option 2: JSON string (less common for FastAPI return)
-        # return team_games.to_json(orient="records")
     else:
         raise HTTPException(status_code=404, detail="Invalid team or year")
 

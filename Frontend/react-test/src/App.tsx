@@ -26,10 +26,10 @@ export default function App() {
   return (
     <MantineProvider>
       <Router>
-        <Group w="100%">
+        <Group w="100%" grow>
           {/* <Title order={1}>NBA Stats Dashboard</Title> */}
           <Routes>
-            {/* <Route path="/" element={<TeamSchedule teamName="Atlanta Hawks" season={2024} />} /> */}
+            <Route path="/:teamName" element={<TeamSchedule/>} />
             <Route path="/" element={<FilteredGames />} />
             <Route path="/game/:gameId" element={<GameDetailsPage />} />
           </Routes>

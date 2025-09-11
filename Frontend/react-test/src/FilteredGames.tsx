@@ -5,6 +5,7 @@ import StatFilter from "./StatFilter";
 import { getFilteredGames, type FilterParams } from "./api";
 import { Link } from "react-router-dom";
 import './App.css';
+import GamesTable from "./GamesTable";
 
 export function formatDate(dateString: string): string {
     const date = new Date(dateString);
@@ -465,32 +466,7 @@ export default function FilteredGames() {
             </Text>}
 
             {/* Full width table */}
-            {games.length > 0 && <Table striped highlightOnHover withTableBorder style={{ width: "100%" }}>
-                <thead>
-                <tr>
-                    <th>Date</th>
-                    <th>Visitor Team</th>
-                    <th>Home Team</th>
-                    <th></th>
-                </tr>
-                </thead>
-                <tbody>
-                {games.map((game) => (
-                    <tr key={game["Game ID"]}>
-                    <td>{formatDate(game["Date"])}</td>
-                    <td>
-                        {game["Visitor Team"]}
-                    </td>
-                    <td>{game["Home Team"]}</td>
-                    <td>
-                        <Link to={`/game/${game["Game ID"]}`} target="_blank" rel="noopener noreferrer">
-                            Box Score
-                        </Link>
-                    </td>
-                    </tr>
-                ))}
-                </tbody>
-            </Table>}
+            {games.length > 0 && <GamesTable games={games} />}
         </Container>
     );
 }

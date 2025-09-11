@@ -73,7 +73,7 @@ export type FilterParams = {
     tov_min?: number;
     tov_max?: number;
 };
-export async function getTeam(teamName: string, season: number) {
+export async function getTeam(teamName: string, season: number = 2025) {
     const res = await fetch(`${BASE_URL}/${teamName}?season=${season}`);
     if (!res.ok) {
         throw new Error(`Error fetching data: ${res.statusText}`);
@@ -129,4 +129,12 @@ export async function getFilteredGames(
         // console.log(res.json())
         return res.json();
     }
+}
+
+export async function getPrediction(gameId: number) {
+    const res = await fetch(`${BASE_URL}/prediction/${gameId}`);
+    if (!res.ok) {
+        throw new Error(`Error fetching data: ${res.statusText}`);
+    }
+    return res.json();
 }

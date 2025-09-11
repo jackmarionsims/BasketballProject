@@ -7,13 +7,18 @@ import joblib
 
 # Load data
 df = pd.read_csv("csvs/model_categories.csv")
-
+df2 = pd.read_csv("csvs/modern.csv")
 # Example engineered feature
 df["PTS Margin"] = df["Home Team PTS Margin Avg"] - df["Visitor Team PTS Margin Avg"]
 
 # Define predictors (make sure these columns exist in df)
-predictors = ["PTS Margin", "W/L% Margin", "ELO Margin", "Tot Season EFF Avg Margin", "Home Team PTS Avg", "Visitor Team PTS Avg"]
+predictors = ["PTS Margin", "W/L% Margin", "ELO Margin", "Tot EFF Margin", "Home Team PTS Avg", "Visitor Team PTS Avg"]
+#predictors = ["PTS Margin", "W/L% Margin", "ELO Margin", "Tot Season EFF Avg Margin", "Home Team PTS Avg", "Visitor Team PTS Avg"]
 
+df["Tot EFF Margin"] = df2["Home Team Tot New Season EFF Avg"] - df2["Visitor Team Tot New Season EFF Avg"]
+# df["Playoff Game"] = df2["Playoff Game"]
+# df["Rest Days Diff"] = df2["Home Team Rest Days"] - df2["Visitor Team Rest Days"]
+df["Last 10 W/L% Margin"] = df2["Home Team Last 10 W/L%"] - df2["Visitor Team Last 10 W/L%"]
 # Initialize model
 # model = XGBClassifier(use_label_encoder=False, eval_metric="logloss")
 model = LogisticRegression(max_iter=1000)
@@ -22,9 +27,9 @@ all_predictions = []
 
 # Walk forward year by year
 years = sorted(df["Season"].unique())
-for year in range(2010, 2026):
+for year in years:
     train = df[(df["Season"] < year) & (df["Season"] >= 1986)]
-    test = df[df["Season"] == year]
+    test = df[(df["Season"] == year)]
 
     if train.empty or test.empty:
         continue
