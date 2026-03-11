@@ -99,6 +99,7 @@ finished_games = pd.read_csv("../csvs/modern.csv")
 model_cats = pd.read_csv("../csvs/model_categories.csv")
 finished_games = finished_games[all_cols].copy()
 finished_games = finished_games.loc[:, ~finished_games.columns.str.contains("^Unnamed")]
+#finished_games = finished_games.set_index("Game ID")
 upcoming_games = pd.DataFrame()
 team_elos = get_all_elos(finished_games, {})
 
@@ -192,8 +193,12 @@ async def root():
 
 @app.get("/game/{game_id}", response_model=CompletedGame)
 async def find_game(game_id: Annotated[int, Path(title="The ID of the game to get", ge=0)]):
+    # if game_id not in finished_games.index:
+    #     raise HTTPException(status_code=404, detail="No game found")
+    # return finished_games.loc[game_id].to_dict()
     row = finished_games[finished_games["Game ID"] == game_id]
     if not row.empty:
+        #change to just returning the row
         return row_to_completed_game(row)
     else:
         raise HTTPException(status_code=404, detail="No game found")
