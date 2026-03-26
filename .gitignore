@@ -1,1 +1,4 @@
 .ipynb_checkpoints/
+*.csv
+!scheduled_games.csv
+!completed_games.csv
