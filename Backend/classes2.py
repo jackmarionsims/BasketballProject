@@ -46,6 +46,15 @@ class NBAName(Enum):
     BROOKLYN_NETS = 'Brooklyn Nets'
     NEW_ORLEANS_PELICANS = 'New Orleans Pelicans'
 
+TEAM_RENAMES = {
+    # (NBAName.NEW_NAME, season): NBAName.OLD_NAME
+    (NBAName.MEMPHIS_GRIZZLIES, 2002): NBAName.VANCOUVER_GRIZZLIES,
+    (NBAName.NEW_ORLEANS_HORNETS, 2003): NBAName.CHARLOTTE_HORNETS,
+    (NBAName.OKLAHOMA_CITY_THUNDER, 2009): NBAName.SEATTLE_SUPERSONICS,
+    (NBAName.NEW_ORLEANS_PELICANS, 2014): NBAName.NEW_ORLEANS_HORNETS,
+    (NBAName.CHARLOTTE_HORNETS, 2015): NBAName.CHARLOTTE_BOBCATS,
+    # add others as needed
+}
 
 class Date(BaseModel):
     year: int
@@ -79,7 +88,8 @@ class NBATeam(BaseModel):
     name: NBAName
     
     # Basic ratings
-    elo: float = Field(..., description="Current ELO rating of the team")
+    elo: float = 1500
+    season: int = 2026
     
     
     stats: Dict = {}

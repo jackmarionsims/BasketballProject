@@ -95,13 +95,13 @@ all_cols = [
 # 'Home Team Opp TO% Avg', 'Visitor Team Opp TO% Avg', 'Home Team Opp FTM/FGA Avg', 'Visitor Team Opp FTM/FGA Avg', 
 # 'Home Team Opp TS% Avg', 'Visitor Team Opp TS% Avg', 'Home Team W', "Home Team L", "Visitor Team W", "Visitor Team L",
 #  "Home Team ELO", "Visitor Team ELO", "Home Team W/L%", "Visitor Team W/L%"]
-finished_games = pd.read_csv("../csvs/modern.csv")
+FINISHED_GAMES = pd.read_csv("../csvs/modern.csv")
 model_cats = pd.read_csv("../csvs/model_categories.csv")
-finished_games = finished_games[all_cols].copy()
-finished_games = finished_games.loc[:, ~finished_games.columns.str.contains("^Unnamed")]
-#finished_games = finished_games.set_index("Game ID")
+FINISHED_GAMES = FINISHED_GAMES[all_cols].copy()
+FINISHED_GAMES = FINISHED_GAMES.loc[:, ~FINISHED_GAMES.columns.str.contains("^Unnamed")]
+#FINISHED_GAMES = FINISHED_GAMES.set_index("Game ID")
 upcoming_games = pd.DataFrame()
-team_elos = get_all_elos(finished_games, {})
+team_elos = get_all_elos(FINISHED_GAMES, {})
 
 # date = Date(year=2025, month="October",day_of_week='Fri', day_num=20, season=2025)
 # # finished_games.to_csv("test.csv")
@@ -196,7 +196,7 @@ async def find_game(game_id: Annotated[int, Path(title="The ID of the game to ge
     # if game_id not in finished_games.index:
     #     raise HTTPException(status_code=404, detail="No game found")
     # return finished_games.loc[game_id].to_dict()
-    row = finished_games[finished_games["Game ID"] == game_id]
+    row = FINISHED_GAMES[FINISHED_GAMES["Game ID"] == game_id]
     if not row.empty:
         #change to just returning the row
         return row_to_completed_game(row)
@@ -205,21 +205,21 @@ async def find_game(game_id: Annotated[int, Path(title="The ID of the game to ge
 
 @app.put("/game/{game_id}")
 async def change_game(game_id: Annotated[int, Path(title="The ID of the game to change", ge=0)], replacement: CompletedGame):
-    idx = finished_games.index[finished_games["Game ID"] == game_id]
+    idx = FINISHED_GAMES.index[FINISHED_GAMES["Game ID"] == game_id]
     if not idx.empty:
         new_row = replacement.to_row()
-        finished_games.loc[idx[0]] = new_row
+        FINISHED_GAMES.loc[idx[0]] = new_row
         # return {"message": f"Game {game_id} updated successfully"}
     else:
         raise HTTPException(status_code=404, detail="No game found")
     
 @app.delete("/game/{game_id}")
 async def delete_game(game_id: Annotated[int, Path(title="The ID of the game to delete", ge=0)]):
-    global finished_games
+    global FINISHED_GAMES
 
-    if game_id not in finished_games["Game ID"].values:
+    if game_id not in FINISHED_GAMES["Game ID"].values:
         raise HTTPException(status_code=404, detail="No game found")
-    finished_games = finished_games[finished_games["Game ID"] != game_id].reset_index(drop=True)
+    FINISHED_GAMES = FINISHED_GAMES[FINISHED_GAMES["Game ID"] != game_id].reset_index(drop=True)
 
     return {"message": f"Game {game_id} deleted successfully"}
     
@@ -232,8 +232,8 @@ async def add_upcoming_game(game: ScheduledGame):
 
 @app.post("/finished_game")
 async def add_finished_game(box_score: BoxScore):
-    global finished_games
-    finished_games = add_completed_game(finished_games, box_score)
+    global FINISHED_GAMES
+    FINISHED_GAMES = add_completed_game(FINISHED_GAMES, box_score)
     return {"message": f"Game added successfully"}
 
 @app.get("/prediction/{game_id}")
@@ -267,8 +267,8 @@ async def predict_game(game_id: Annotated[int, Path(title="The ID of the game to
 
 @app.get("/filter")
 async def filtered_games(filter1: FilterParams = Depends(get_filter1), filter2: FilterParams = Depends(get_filter2)):
-    df1 = finished_games.copy()
-    df2 = finished_games.copy()
+    df1 = FINISHED_GAMES.copy()
+    df2 = FINISHED_GAMES.copy()
 
     filters = {
         # Points
@@ -378,7 +378,7 @@ async def filtered_games(filter1: FilterParams = Depends(get_filter1), filter2: 
 
 @app.get("/filter-home-visitor")
 async def filtered_by_home(home_filter: FilterParams = Depends(get_filter1), visitor_filter: FilterParams = Depends(get_filter2)):
-    df = finished_games.copy()
+    df = FINISHED_GAMES.copy()
 
     filters = {
         # PTS
@@ -465,8 +465,8 @@ async def filtered_by_home(home_filter: FilterParams = Depends(get_filter1), vis
 
 @app.get("/filter-winner-loser")
 async def filtered_by_winner(winner_filter: FilterParams = Depends(get_filter1), loser_filter: FilterParams = Depends(get_filter2)):
-    df1 = finished_games.copy()
-    df2 = finished_games.copy()
+    df1 = FINISHED_GAMES.copy()
+    df2 = FINISHED_GAMES.copy()
     filters = {
         # PTS
         "Winning Team PTS": (winner_filter.pts_min, winner_filter.pts_max),
@@ -578,8 +578,8 @@ async def get_team(
     team_name: Annotated[str, Path(title="The name of the team to get")],
     season: Annotated[int, Query(title="The season to access")] = 2025
 ):
-    global finished_games
-    season_games = finished_games[finished_games["Season"] == season]
+    global FINISHED_GAMES
+    season_games = FINISHED_GAMES[FINISHED_GAMES["Season"] == season]
     team_games = season_games[
         (season_games["Home Team"] == team_name) |
         (season_games["Visitor Team"] == team_name)
