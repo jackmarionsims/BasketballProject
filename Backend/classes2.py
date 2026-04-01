@@ -98,69 +98,186 @@ class NBATeam(BaseModel):
     def to_row(self) -> pd.DataFrame:
         return pd.DataFrame([self.pgs])
 
-class ScheduledGame(BaseModel):
-    home: NBATeam
-    visitor: NBATeam
-    date: Date
-    playoff: bool
+# class ScheduledGame(BaseModel):
+#     home: NBATeam
+#     visitor: NBATeam
+#     date: Date
+#     playoff: bool
 
-    pgs: Dict[str, Any] = Field(default=None)
+#     pgs: Dict[str, Any] = Field(default=None)
 
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+#     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    @model_validator(mode="after")
-    def compute_pgs(self) -> "ScheduledGame":
-        if self.pgs is None:
-            df = get_pregame_stats(self.home, self.visitor, self.date)
-            self.pgs = df.iloc[0].to_dict()
-        return self
+#     @model_validator(mode="after")
+#     def compute_pgs(self) -> "ScheduledGame":
+#         if self.pgs is None:
+#             df = get_pregame_stats(self.home, self.visitor, self.date)
+#             self.pgs = df.iloc[0].to_dict()
+#         return self
 
-    def to_row(self) -> pd.DataFrame:
-        return pd.DataFrame([self.pgs])
-
-
-
-class BoxScore(BaseModel):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    box_score: Dict[str, Any]  # store row as dict instead of DataFrame
-
-    @model_validator(mode="after")
-    def validate_box_score(self) -> "BoxScore":
-        required = [
-            'Home Team', 'Visitor Team', 'Winner', 'Loser', 
-            'Home Win', 'Home Team PTS', 'Home Team AST', 
-            'Home Team TRB', 'Home Team ORB', 'Home Team DRB', 
-            'Home Team BLK', 'Home Team STL', 'Home Team FGA', 
-            'Home Team FG', 'Home Team FG%', 'Home Team 3PA', 
-            'Home Team 3P', 'Home Team 3P%', 'Home Team FTA', 
-            'Home Team FT', 'Home Team FT%', 'Home Team PF', 
-            'Home Team TOV', 'Visitor Team PTS', 'Visitor Team AST', 
-            'Visitor Team TRB', 'Visitor Team ORB', 'Visitor Team DRB', 
-            'Visitor Team BLK', 'Visitor Team STL', 'Visitor Team FGA', 
-            'Visitor Team FG', 'Visitor Team FG%', 'Visitor Team 3PA', 
-            'Visitor Team 3P', 'Visitor Team 3P%', 'Visitor Team FTA', 
-            'Visitor Team FT', 'Visitor Team FT%', 'Visitor Team PF', 
-            'Visitor Team TOV'
-        ]
-        # next = ['Home Team ORB%', 'Visitor Team ORB%', 'Home Team TO%', 'Visitor Team TO%',
-        #     'Home Team FTM/FGA', 'Visitor Team FTM/FGA', 'Home Team TS%', 'Visitor Team TS%']
-
-        missing = set(required) - set(self.box_score.keys())
-        if missing:
-            raise ValueError(f"Missing required box_score fields: {missing}")
-
-        return self
-
-    def to_row(self) -> pd.DataFrame:
-        return pd.DataFrame([self.box_score])
+#     def to_row(self) -> pd.DataFrame:
+#         return pd.DataFrame([self.pgs])
 
 
 
-class CompletedGame(BaseModel):
-    box_score: BoxScore
-    scheduled_game: ScheduledGame
+# class BoxScore(BaseModel):
+#     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    def to_row(self) -> pd.DataFrame:
-        combined = {**self.scheduled_game.pgs, **self.box_score.box_score}
-        return pd.DataFrame([combined])
+#     box_score: Dict[str, Any]  # store row as dict instead of DataFrame
+
+#     @model_validator(mode="after")
+#     def validate_box_score(self) -> "BoxScore":
+#         required = [
+#             'Home Team', 'Visitor Team', 'Winner', 'Loser', 
+#             'Home Win', 'Home Team PTS', 'Home Team AST', 
+#             'Home Team TRB', 'Home Team ORB', 'Home Team DRB', 
+#             'Home Team BLK', 'Home Team STL', 'Home Team FGA', 
+#             'Home Team FG', 'Home Team FG%', 'Home Team 3PA', 
+#             'Home Team 3P', 'Home Team 3P%', 'Home Team FTA', 
+#             'Home Team FT', 'Home Team FT%', 'Home Team PF', 
+#             'Home Team TOV', 'Visitor Team PTS', 'Visitor Team AST', 
+#             'Visitor Team TRB', 'Visitor Team ORB', 'Visitor Team DRB', 
+#             'Visitor Team BLK', 'Visitor Team STL', 'Visitor Team FGA', 
+#             'Visitor Team FG', 'Visitor Team FG%', 'Visitor Team 3PA', 
+#             'Visitor Team 3P', 'Visitor Team 3P%', 'Visitor Team FTA', 
+#             'Visitor Team FT', 'Visitor Team FT%', 'Visitor Team PF', 
+#             'Visitor Team TOV'
+#         ]
+#         # next = ['Home Team ORB%', 'Visitor Team ORB%', 'Home Team TO%', 'Visitor Team TO%',
+#         #     'Home Team FTM/FGA', 'Visitor Team FTM/FGA', 'Home Team TS%', 'Visitor Team TS%']
+
+#         missing = set(required) - set(self.box_score.keys())
+#         if missing:
+#             raise ValueError(f"Missing required box_score fields: {missing}")
+
+#         return self
+
+#     def to_row(self) -> pd.DataFrame:
+#         return pd.DataFrame([self.box_score])
+
+
+
+# class CompletedGame(BaseModel):
+#     box_score: BoxScore
+#     scheduled_game: ScheduledGame
+
+#     def to_row(self) -> pd.DataFrame:
+#         combined = {**self.scheduled_game.pgs, **self.box_score.box_score}
+#         return pd.DataFrame([combined])
+all_cols = [
+    'Game ID', 'Date Number', 'Date', 'Game Type', 
+    'Home Team', 'Visitor Team', 'Winner', 'Loser', 
+    'Home Win', 'Home Team PTS', 'Home Team AST', 
+    'Home Team TRB', 'Home Team ORB', 'Home Team DRB', 
+    'Home Team BLK', 'Home Team STL', 'Home Team FGA', 
+    'Home Team FG', 'Home Team FG%', 'Home Team 3PA', 
+    'Home Team 3P', 'Home Team 3P%', 'Home Team FTA', 
+    'Home Team FT', 'Home Team FT%', 'Home Team PF', 
+    'Home Team TOV', 'Visitor Team PTS', 'Visitor Team AST', 
+    'Visitor Team TRB', 'Visitor Team ORB', 'Visitor Team DRB', 
+    'Visitor Team BLK', 'Visitor Team STL', 'Visitor Team FGA', 
+    'Visitor Team FG', 'Visitor Team FG%', 'Visitor Team 3PA', 
+    'Visitor Team 3P', 'Visitor Team 3P%', 'Visitor Team FTA', 
+    'Visitor Team FT', 'Visitor Team FT%', 'Visitor Team PF', 
+    'Visitor Team TOV', 'Playoff Game', 'Season', 
+    'Home Team PTS Avg', 'Visitor Team PTS Avg', 
+    'Home Team Opp PTS Avg', 'Visitor Team Opp PTS Avg', 
+    'Home Team AST Avg', 'Visitor Team AST Avg', 
+    'Home Team Opp AST Avg', 'Visitor Team Opp AST Avg', 
+    'Home Team TRB Avg', 'Visitor Team TRB Avg', 
+    'Home Team Opp TRB Avg', 'Visitor Team Opp TRB Avg', 
+    'Home Team ORB Avg', 'Visitor Team ORB Avg', 
+    'Home Team Opp ORB Avg', 'Visitor Team Opp ORB Avg', 
+    'Home Team DRB Avg', 'Visitor Team DRB Avg', 
+    'Home Team Opp DRB Avg', 'Visitor Team Opp DRB Avg', 
+    'Home Team BLK Avg', 'Visitor Team BLK Avg', 
+    'Home Team Opp BLK Avg', 'Visitor Team Opp BLK Avg', 
+    'Home Team STL Avg', 'Visitor Team STL Avg', 
+    'Home Team Opp STL Avg', 'Visitor Team Opp STL Avg', 
+    'Home Team FGA Avg', 'Visitor Team FGA Avg', 
+    'Home Team Opp FGA Avg', 'Visitor Team Opp FGA Avg', 
+    'Home Team FG Avg', 'Visitor Team FG Avg', 
+    'Home Team Opp FG Avg', 'Visitor Team Opp FG Avg', 
+    'Home Team FG% Avg', 'Visitor Team FG% Avg', 
+    'Home Team Opp FG% Avg', 'Visitor Team Opp FG% Avg', 
+    'Home Team 3PA Avg', 'Visitor Team 3PA Avg', 
+    'Home Team Opp 3PA Avg', 'Visitor Team Opp 3PA Avg', 
+    'Home Team 3P Avg', 'Visitor Team 3P Avg', 
+    'Home Team Opp 3P Avg', 'Visitor Team Opp 3P Avg', 
+    'Home Team 3P% Avg', 'Visitor Team 3P% Avg', 
+    'Home Team Opp 3P% Avg', 'Visitor Team Opp 3P% Avg', 
+    'Home Team FTA Avg', 'Visitor Team FTA Avg', 
+    'Home Team Opp FTA Avg', 'Visitor Team Opp FTA Avg', 
+    'Home Team FT Avg', 'Visitor Team FT Avg', 
+    'Home Team Opp FT Avg', 'Visitor Team Opp FT Avg', 
+    'Home Team FT% Avg', 'Visitor Team FT% Avg', 
+    'Home Team Opp FT% Avg', 'Visitor Team Opp FT% Avg', 
+    'Home Team PF Avg', 'Visitor Team PF Avg', 
+    'Home Team Opp PF Avg', 'Visitor Team Opp PF Avg', 
+    'Home Team TOV Avg', 'Visitor Team TOV Avg', 
+    'Home Team Opp TOV Avg', 'Visitor Team Opp TOV Avg', 
+    'Home Team ELO', 'Visitor Team ELO', 
+    'Home Team Total Games', 'Home Team W', 'Home Team L', 
+    'Home Team W/L%', 'Visitor Team Total Games', 
+    'Visitor Team W', 'Visitor Team L', 'Visitor Team W/L%', 
+    'Home Team Tot Season EFF Avg', 'Home Team Tot Career EFF Avg', 
+    'Visitor Team Tot Season EFF Avg', 'Visitor Team Tot Career EFF Avg'
+]
+
+no_eff = [
+    'Game ID', 'Date Number', 'Date', 'Game Type', 
+    'Home Team', 'Visitor Team', 'Winner', 'Loser', 
+    'Home Win', 'Home Team PTS', 'Home Team AST', 
+    'Home Team TRB', 'Home Team ORB', 'Home Team DRB', 
+    'Home Team BLK', 'Home Team STL', 'Home Team FGA', 
+    'Home Team FG', 'Home Team FG%', 'Home Team 3PA', 
+    'Home Team 3P', 'Home Team 3P%', 'Home Team FTA', 
+    'Home Team FT', 'Home Team FT%', 'Home Team PF', 
+    'Home Team TOV', 'Visitor Team PTS', 'Visitor Team AST', 
+    'Visitor Team TRB', 'Visitor Team ORB', 'Visitor Team DRB', 
+    'Visitor Team BLK', 'Visitor Team STL', 'Visitor Team FGA', 
+    'Visitor Team FG', 'Visitor Team FG%', 'Visitor Team 3PA', 
+    'Visitor Team 3P', 'Visitor Team 3P%', 'Visitor Team FTA', 
+    'Visitor Team FT', 'Visitor Team FT%', 'Visitor Team PF', 
+    'Visitor Team TOV', 'Playoff Game', 'Season', 
+    'Home Team PTS Avg', 'Visitor Team PTS Avg', 
+    'Home Team Opp PTS Avg', 'Visitor Team Opp PTS Avg', 
+    'Home Team AST Avg', 'Visitor Team AST Avg', 
+    'Home Team Opp AST Avg', 'Visitor Team Opp AST Avg', 
+    'Home Team TRB Avg', 'Visitor Team TRB Avg', 
+    'Home Team Opp TRB Avg', 'Visitor Team Opp TRB Avg', 
+    'Home Team ORB Avg', 'Visitor Team ORB Avg', 
+    'Home Team Opp ORB Avg', 'Visitor Team Opp ORB Avg', 
+    'Home Team DRB Avg', 'Visitor Team DRB Avg', 
+    'Home Team Opp DRB Avg', 'Visitor Team Opp DRB Avg', 
+    'Home Team BLK Avg', 'Visitor Team BLK Avg', 
+    'Home Team Opp BLK Avg', 'Visitor Team Opp BLK Avg', 
+    'Home Team STL Avg', 'Visitor Team STL Avg', 
+    'Home Team Opp STL Avg', 'Visitor Team Opp STL Avg', 
+    'Home Team FGA Avg', 'Visitor Team FGA Avg', 
+    'Home Team Opp FGA Avg', 'Visitor Team Opp FGA Avg', 
+    'Home Team FG Avg', 'Visitor Team FG Avg', 
+    'Home Team Opp FG Avg', 'Visitor Team Opp FG Avg', 
+    'Home Team FG% Avg', 'Visitor Team FG% Avg', 
+    'Home Team Opp FG% Avg', 'Visitor Team Opp FG% Avg', 
+    'Home Team 3PA Avg', 'Visitor Team 3PA Avg', 
+    'Home Team Opp 3PA Avg', 'Visitor Team Opp 3PA Avg', 
+    'Home Team 3P Avg', 'Visitor Team 3P Avg', 
+    'Home Team Opp 3P Avg', 'Visitor Team Opp 3P Avg', 
+    'Home Team 3P% Avg', 'Visitor Team 3P% Avg', 
+    'Home Team Opp 3P% Avg', 'Visitor Team Opp 3P% Avg', 
+    'Home Team FTA Avg', 'Visitor Team FTA Avg', 
+    'Home Team Opp FTA Avg', 'Visitor Team Opp FTA Avg', 
+    'Home Team FT Avg', 'Visitor Team FT Avg', 
+    'Home Team Opp FT Avg', 'Visitor Team Opp FT Avg', 
+    'Home Team FT% Avg', 'Visitor Team FT% Avg', 
+    'Home Team Opp FT% Avg', 'Visitor Team Opp FT% Avg', 
+    'Home Team PF Avg', 'Visitor Team PF Avg', 
+    'Home Team Opp PF Avg', 'Visitor Team Opp PF Avg', 
+    'Home Team TOV Avg', 'Visitor Team TOV Avg', 
+    'Home Team Opp TOV Avg', 'Visitor Team Opp TOV Avg', 
+    'Home Team ELO', 'Visitor Team ELO', 
+    'Home Team Total Games', 'Home Team W', 'Home Team L', 
+    'Home Team W/L%', 'Visitor Team Total Games', 
+    'Visitor Team W', 'Visitor Team L', 'Visitor Team W/L%', 
+]

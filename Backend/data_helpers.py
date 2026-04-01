@@ -1,13 +1,16 @@
 from datetime import datetime
 import pandas as pd
-from classes2 import NBAName, NBATeam, Date, TEAM_RENAMES
+from classes2 import NBAName, NBATeam, TEAM_RENAMES
+import pickle
+import time
 
 
-abbrev_df = pd.read_csv("csvs/abbrevs.csv")
+abbrev_df = pd.read_csv("../csvs/abbrevs.csv")
 NAME_TO_ABBR = dict(zip(abbrev_df["Name"], abbrev_df["Abbreviation"]))
 CACHE_VERSION = 1
-ALL_TEAMS = {}
 SCHEDULED_GAMES = pd.DataFrame()
+with open(f"../all_teams1.pkl", "rb") as f:
+    ALL_TEAMS = pickle.load(f)
 
 '''
 Calculations or Conversions
@@ -59,6 +62,17 @@ def elo_change(home_elo, visitor_elo, margin, k=20):
     # mov_multiplier = min(mov_multiplier, 2)
     return k * mov_multiplier * (score - expected_home)
 
+def driver_get_with_retry(driver, url, retries=3, delay=5):
+    for attempt in range(retries):
+        try:
+            driver.get(url)
+            return
+        except Exception as e:
+            print(f"Attempt {attempt + 1} failed for {url}: {e}")
+            if attempt < retries - 1:
+                time.sleep(delay)
+            else:
+                raise
 
 '''
 DataFrame Modifiers
@@ -303,6 +317,106 @@ def get_pregame_stats(home: NBATeam, visitor: NBATeam, date: str) -> pd.DataFram
         "Playoff Game": 0
     })
     return pd.DataFrame([row])
+
+#MOVE
+def box_score_update(scheduled_game, home_totals, visitor_totals):
+    """
+    update team stats for home and away team using box score of game
+    """
+    #also calculate elo change
+    box_score = {}
+    season = scheduled_game["Season"]
+    home = ALL_TEAMS[season][NBAName(scheduled_game["Home Team"])]
+    visitor = ALL_TEAMS[season][NBAName(scheduled_game["Visitor Team"])]
+
+    home_points = int(home_totals["PTS"])
+    visitor_points = int(visitor_totals["PTS"])
+    home_win = 1 if home_points > visitor_points else 0
+
+    #elo changes
+    margin = home_points - visitor_points
+    delta = elo_change(home.elo+100, visitor.elo, margin)
+    home.elo += delta
+    visitor.elo -= delta
+
+    home.stats["Total Games"] += 1
+    home.stats["Total Home Games"] += 1
+    home.stats["W"] += home_win
+    home.stats["Home W"] += home_win
+    home.stats["L"] += (1-home_win)
+    home.stats["Home L"] += (1-home_win)
+
+    visitor.stats["Total Games"] += 1
+    visitor.stats["Total Visitor Games"] += 1
+    visitor.stats["W"] += (1-home_win)
+    visitor.stats["Visitor W"] += (1-home_win)
+    visitor.stats["L"] += home_win
+    visitor.stats["Visitor L"] += home_win
+
+    
+    #handle percentages differently
+    cols = [
+        'PTS', 'AST', 'TRB', 'ORB', 
+        'DRB', 'BLK', 'STL', 
+        'FGA', 'FG', '3PA', 
+        '3P', 'FTA', 'FT', 
+        'PF', 'TOV'
+    ]
+    
+    
+    for col in cols:
+        home_stat = int(home_totals[col])
+        visitor_stat = int(visitor_totals[col])
+
+        box_score[f"Home Team {col}"] = home_stat
+        box_score[f"Visitor Team {col}"] = visitor_stat
+
+        home.stats[f"Total {col}"] += home_stat
+        home.stats[f"Home Total {col}"] += home_stat
+        home.stats[f"Total Opp {col}"] += visitor_stat
+        home.stats[f"Home Total Opp {col}"] += visitor_stat
+
+        visitor.stats[f"Total {col}"] += visitor_stat
+        visitor.stats[f"Visitor Total {col}"] += visitor_stat
+        visitor.stats[f"Total Opp {col}"] += home_stat
+        visitor.stats[f"Visitor Total Opp {col}"] += home_stat
+
+    percs = ["FG%", "3P%", "FT%"]
+    for perc in percs:
+        home_stat = float(home_totals[perc])
+        visitor_stat = float(visitor_totals[perc])
+        box_score[f"Home Team {perc}"] = home_stat
+        box_score[f"Visitor Team {perc}"] = visitor_stat
+    
+    box_score["Winner"] = home.name.value if home_win else visitor.name.value
+    box_score["Loser"] = visitor.name.value if home_win else home.name.value
+    box_score["Home Win"] = home_win
+    
+    return box_score
+
+#MOVE
+def update_pgs(scheduled_games, season, home_name, visitor_name):
+    scheduled_games = scheduled_games.copy()
+    teams_played = {home_name, visitor_name}
+    for idx, game in scheduled_games.iterrows():
+        if game["Home Team"] in teams_played or game["Visitor Team"] in teams_played:
+            home = ALL_TEAMS[season][NBAName(game["Home Team"])]
+            visitor = ALL_TEAMS[season][NBAName(game["Visitor Team"])]
+            date = game["Date"]
+            row = get_pregame_stats(home, visitor, date)
+            scheduled_games.loc[idx] = row.set_index("Game ID").iloc[0]
+    return scheduled_games
+
+#MOVE
+def complete_game(scheduled_game, box_score, completed_games):
+    sg_dict = scheduled_game.to_dict()
+    sg_dict["Game ID"] = scheduled_game.name
+    combined = {**sg_dict, **box_score}
+    # print(combined)
+    new_row = pd.DataFrame([combined]).set_index("Game ID")
+    completed_games = pd.concat([completed_games, new_row])
+    #completed_games.to_csv("completed_games.csv", index=False)
+    return completed_games
 
 
 # def calculate_rolling_stats(df, season):

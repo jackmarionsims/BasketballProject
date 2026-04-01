@@ -1,4 +1,4 @@
-from typing import Annotated, Optional
+from typing import Annotated, Optional, Dict, Any
 from enum import Enum
 import numpy as np
 from fastapi import FastAPI, Query, HTTPException, Path, Depends
@@ -8,6 +8,12 @@ from xgboost import XGBRegressor
 import pandas as pd
 import joblib
 from teams import NBAName, PregameStats, ScheduledGame, BoxScore, CompletedGame, row_to_completed_game, add_scheduled_game, add_completed_game, Date, get_all_elos, FilterParams, get_filter1, get_filter2
+from classes2 import all_cols, no_eff
+from data_collection import add_scores, save_state, add_game_result, update_schedule
+from data_helpers import get_pregame_stats, ALL_TEAMS
+import pickle
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 
 app = FastAPI()
 
@@ -28,66 +34,6 @@ app.add_middleware(
 )
 
 
-all_cols = [
-    'Game ID', 'Date Number', 'Date', 'Game Type', 
-    'Home Team', 'Visitor Team', 'Winner', 'Loser', 
-    'Home Win', 'Home Team PTS', 'Home Team AST', 
-    'Home Team TRB', 'Home Team ORB', 'Home Team DRB', 
-    'Home Team BLK', 'Home Team STL', 'Home Team FGA', 
-    'Home Team FG', 'Home Team FG%', 'Home Team 3PA', 
-    'Home Team 3P', 'Home Team 3P%', 'Home Team FTA', 
-    'Home Team FT', 'Home Team FT%', 'Home Team PF', 
-    'Home Team TOV', 'Visitor Team PTS', 'Visitor Team AST', 
-    'Visitor Team TRB', 'Visitor Team ORB', 'Visitor Team DRB', 
-    'Visitor Team BLK', 'Visitor Team STL', 'Visitor Team FGA', 
-    'Visitor Team FG', 'Visitor Team FG%', 'Visitor Team 3PA', 
-    'Visitor Team 3P', 'Visitor Team 3P%', 'Visitor Team FTA', 
-    'Visitor Team FT', 'Visitor Team FT%', 'Visitor Team PF', 
-    'Visitor Team TOV', 'Playoff Game', 'Season', 
-    'Home Team PTS Avg', 'Visitor Team PTS Avg', 
-    'Home Team Opp PTS Avg', 'Visitor Team Opp PTS Avg', 
-    'Home Team AST Avg', 'Visitor Team AST Avg', 
-    'Home Team Opp AST Avg', 'Visitor Team Opp AST Avg', 
-    'Home Team TRB Avg', 'Visitor Team TRB Avg', 
-    'Home Team Opp TRB Avg', 'Visitor Team Opp TRB Avg', 
-    'Home Team ORB Avg', 'Visitor Team ORB Avg', 
-    'Home Team Opp ORB Avg', 'Visitor Team Opp ORB Avg', 
-    'Home Team DRB Avg', 'Visitor Team DRB Avg', 
-    'Home Team Opp DRB Avg', 'Visitor Team Opp DRB Avg', 
-    'Home Team BLK Avg', 'Visitor Team BLK Avg', 
-    'Home Team Opp BLK Avg', 'Visitor Team Opp BLK Avg', 
-    'Home Team STL Avg', 'Visitor Team STL Avg', 
-    'Home Team Opp STL Avg', 'Visitor Team Opp STL Avg', 
-    'Home Team FGA Avg', 'Visitor Team FGA Avg', 
-    'Home Team Opp FGA Avg', 'Visitor Team Opp FGA Avg', 
-    'Home Team FG Avg', 'Visitor Team FG Avg', 
-    'Home Team Opp FG Avg', 'Visitor Team Opp FG Avg', 
-    'Home Team FG% Avg', 'Visitor Team FG% Avg', 
-    'Home Team Opp FG% Avg', 'Visitor Team Opp FG% Avg', 
-    'Home Team 3PA Avg', 'Visitor Team 3PA Avg', 
-    'Home Team Opp 3PA Avg', 'Visitor Team Opp 3PA Avg', 
-    'Home Team 3P Avg', 'Visitor Team 3P Avg', 
-    'Home Team Opp 3P Avg', 'Visitor Team Opp 3P Avg', 
-    'Home Team 3P% Avg', 'Visitor Team 3P% Avg', 
-    'Home Team Opp 3P% Avg', 'Visitor Team Opp 3P% Avg', 
-    'Home Team FTA Avg', 'Visitor Team FTA Avg', 
-    'Home Team Opp FTA Avg', 'Visitor Team Opp FTA Avg', 
-    'Home Team FT Avg', 'Visitor Team FT Avg', 
-    'Home Team Opp FT Avg', 'Visitor Team Opp FT Avg', 
-    'Home Team FT% Avg', 'Visitor Team FT% Avg', 
-    'Home Team Opp FT% Avg', 'Visitor Team Opp FT% Avg', 
-    'Home Team PF Avg', 'Visitor Team PF Avg', 
-    'Home Team Opp PF Avg', 'Visitor Team Opp PF Avg', 
-    'Home Team TOV Avg', 'Visitor Team TOV Avg', 
-    'Home Team Opp TOV Avg', 'Visitor Team Opp TOV Avg', 
-    'Home Team ELO', 'Visitor Team ELO', 
-    'Home Team Total Games', 'Home Team W', 'Home Team L', 
-    'Home Team W/L%', 'Visitor Team Total Games', 
-    'Visitor Team W', 'Visitor Team L', 'Visitor Team W/L%', 
-    'Home Team Tot Season EFF Avg', 'Home Team Tot Career EFF Avg', 
-    'Visitor Team Tot Season EFF Avg', 'Visitor Team Tot Career EFF Avg'
-]
-
 # next = ['Home Team ORB%', 'Visitor Team ORB%', 'Home Team TO%', 'Visitor Team TO%',
 # 'Home Team FTM/FGA', 'Visitor Team FTM/FGA', 'Home Team TS%', 'Visitor Team TS%', 'Home Team ORB% Avg', 'Visitor Team ORB% Avg', 
 # 'Home Team TO% Avg', 'Visitor Team TO% Avg', 'Home Team FTM/FGA Avg', 'Visitor Team FTM/FGA Avg', 
@@ -95,82 +41,12 @@ all_cols = [
 # 'Home Team Opp TO% Avg', 'Visitor Team Opp TO% Avg', 'Home Team Opp FTM/FGA Avg', 'Visitor Team Opp FTM/FGA Avg', 
 # 'Home Team Opp TS% Avg', 'Visitor Team Opp TS% Avg', 'Home Team W', "Home Team L", "Visitor Team W", "Visitor Team L",
 #  "Home Team ELO", "Visitor Team ELO", "Home Team W/L%", "Visitor Team W/L%"]
-FINISHED_GAMES = pd.read_csv("../csvs/modern.csv")
 model_cats = pd.read_csv("../csvs/model_categories.csv")
-FINISHED_GAMES = FINISHED_GAMES[all_cols].copy()
-FINISHED_GAMES = FINISHED_GAMES.loc[:, ~FINISHED_GAMES.columns.str.contains("^Unnamed")]
-#FINISHED_GAMES = FINISHED_GAMES.set_index("Game ID")
-upcoming_games = pd.DataFrame()
-team_elos = get_all_elos(FINISHED_GAMES, {})
 
-# date = Date(year=2025, month="October",day_of_week='Fri', day_num=20, season=2025)
-# # finished_games.to_csv("test.csv")
-# game = ScheduledGame(home=NBAName.BOSTON_CELTICS, visitor=NBAName.LOS_ANGELES_LAKERS, date=date, playoff=True)
-# sample_data = {
-#     'Visitor Team': ['Los Angeles Lakers'],
-#     'Visitor Team Points': [102],
-#     'Home Team': ['Boston Celtics'],
-#     'Home Team Points': [110],
-#     'Winner': ['Boston Celtics'],
-#     "Loser": ['Los Angeles Lakers'],
-#     'Home Win': [1],
-#     'Home Team Assists': [25],
-#     'Home Team Tot Rebounds': [45],
-#     'Home Team Off Rebounds': [12],
-#     'Home Team Def Rebounds': [33],
-#     'Home Team Blocks': [5],
-#     'Home Team Steals': [7],
-#     'Home Team FGA': [89],
-#     'Home Team FGM': [44],
-#     'Home Team FG%': [49.4],
-#     'Home Team 3PA': [30],
-#     'Home Team 3PM': [10],
-#     'Home Team 3P%': [33.3],
-#     'Home Team FTA': [20],
-#     'Home Team FTM': [12],
-#     'Home Team FT%': [60.0],
-#     'Home Team Fouls': [18],
-#     'Home Team TO': [14],
-    
-#     'Visitor Team Assists': [20],
-#     'Visitor Team Tot Rebounds': [40],
-#     'Visitor Team Off Rebounds': [10],
-#     'Visitor Team Def Rebounds': [30],
-#     'Visitor Team Blocks': [3],
-#     'Visitor Team Steals': [6],
-#     'Visitor Team FGA': [85],
-#     'Visitor Team FGM': [39],
-#     'Visitor Team FG%': [45.9],
-#     'Visitor Team 3PA': [28],
-#     'Visitor Team 3PM': [8],
-#     'Visitor Team 3P%': [28.6],
-#     'Visitor Team FTA': [22],
-#     'Visitor Team FTM': [16],
-#     'Visitor Team FT%': [72.7],
-#     'Visitor Team Fouls': [16],
-#     'Visitor Team TO': [15],
-    
-#     'Home Team ORB%': [55.0],
-#     'Visitor Team ORB%': [45.0],
-#     'Home Team TO%': [13.2],
-#     'Visitor Team TO%': [14.7],
-#     'Home Team FTM/FGA': [0.135],
-#     'Visitor Team FTM/FGA': [0.188],
-#     'Home Team TS%': [55.0],
-#     'Visitor Team TS%': [52.3],
-    
-#     'Date Number': [739544]
-# }
-
-# sample_df = pd.DataFrame(sample_data)
-
-# # Instantiate the BoxScore object
-# sample_box_score = BoxScore(box_score=sample_df.iloc[0].to_dict())
-# finished_games = add_scheduled_game(finished_games, game, team_elos)
-# finished_games.to_csv("../csvs/test_upcoming.csv")
-# finished_games = add_completed_game(finished_games, sample_box_score)
-# finished_games.to_csv("../csvs/test_finished.csv")
-# # all_teams = df_to_teams(finished_games)
+completed_games = pd.read_csv("../completed_games.csv")
+completed_games = completed_games.set_index("Game ID")
+scheduled_games = pd.read_csv("../scheduled_games.csv")
+scheduled_games = scheduled_games.set_index("Game ID")
 
 log_model = joblib.load("../result_predictor.pkl")
 xgb_home = XGBRegressor()
@@ -191,50 +67,133 @@ xgb_visitor.load_model("../visitor_model_scores.json")
 async def root():
     return {"message": "Hello from FastAPI"}
 
-@app.get("/game/{game_id}", response_model=CompletedGame)
-async def find_game(game_id: Annotated[int, Path(title="The ID of the game to get", ge=0)]):
-    # if game_id not in finished_games.index:
-    #     raise HTTPException(status_code=404, detail="No game found")
-    # return finished_games.loc[game_id].to_dict()
-    row = FINISHED_GAMES[FINISHED_GAMES["Game ID"] == game_id]
-    if not row.empty:
-        #change to just returning the row
-        return row_to_completed_game(row)
-    else:
+@app.get("/game/{game_id}", response_model=Dict[str, Any])
+async def find_game(game_id: Annotated[str, Path(title="The ID of the game to get")], 
+                    box_score_only: bool = False):
+    if game_id not in completed_games.index:
         raise HTTPException(status_code=404, detail="No game found")
+    row = completed_games.loc[game_id].to_dict()
+    if box_score_only:
+        box_score_cols = [
+            'Game ID', 'Date Number', 'Date', 'Game Type', 
+            'Home Team', 'Visitor Team', 'Winner', 'Loser', 
+            'Home Win', 'Home Team PTS', 'Home Team AST', 
+            'Home Team TRB', 'Home Team ORB', 'Home Team DRB', 
+            'Home Team BLK', 'Home Team STL', 'Home Team FGA', 
+            'Home Team FG', 'Home Team FG%', 'Home Team 3PA', 
+            'Home Team 3P', 'Home Team 3P%', 'Home Team FTA', 
+            'Home Team FT', 'Home Team FT%', 'Home Team PF', 
+            'Home Team TOV', 'Visitor Team PTS', 'Visitor Team AST', 
+            'Visitor Team TRB', 'Visitor Team ORB', 'Visitor Team DRB', 
+            'Visitor Team BLK', 'Visitor Team STL', 'Visitor Team FGA', 
+            'Visitor Team FG', 'Visitor Team FG%', 'Visitor Team 3PA', 
+            'Visitor Team 3P', 'Visitor Team 3P%', 'Visitor Team FTA', 
+            'Visitor Team FT', 'Visitor Team FT%', 'Visitor Team PF', 
+            'Visitor Team TOV', 'Playoff Game', 'Season', 
+        ]
+        row = {k: v for k, v in row.items() if k in box_score_cols}
+    return row
 
-@app.put("/game/{game_id}")
-async def change_game(game_id: Annotated[int, Path(title="The ID of the game to change", ge=0)], replacement: CompletedGame):
-    idx = FINISHED_GAMES.index[FINISHED_GAMES["Game ID"] == game_id]
-    if not idx.empty:
-        new_row = replacement.to_row()
-        FINISHED_GAMES.loc[idx[0]] = new_row
-        # return {"message": f"Game {game_id} updated successfully"}
-    else:
-        raise HTTPException(status_code=404, detail="No game found")
-    
+# @app.put("/game/{game_id}")
+# async def change_game(game_id: Annotated[str, Path(title="The ID of the game to change")], replacement: Dict[str, Any]):
+#     if game_id not in completed_games.index:
+#         raise HTTPException(status_code=404, detail="No game found")
+#     completed_games.loc[game_id] = replacement
+#     return {"message": f"Game {game_id} updated successfully"}
+
+#implement this once created GameUpdate or similar class
+# class GameUpdate(BaseModel):
+#     # list only the fields you allow to be updated
+#     home_team_pts: float | None = None
+#     visitor_team_pts: float | None = None
+#     home_win: int | None = None
+#     # etc.
+
+# @app.put("/game/{game_id}")
+# async def change_game(
+#     game_id: Annotated[str, Path(title="The ID of the game to change")], 
+#     replacement: GameUpdate
+# ):
+#     if game_id not in completed_games.index:
+#         raise HTTPException(status_code=404, detail="No game found")
+#     update_dict = replacement.model_dump(exclude_none=True)
+#     completed_games.loc[game_id, list(update_dict.keys())] = list(update_dict.values())
+#     return {"message": f"Game {game_id} updated successfully"}
+
+#add game_id format checker for all
 @app.delete("/game/{game_id}")
-async def delete_game(game_id: Annotated[int, Path(title="The ID of the game to delete", ge=0)]):
-    global FINISHED_GAMES
-
-    if game_id not in FINISHED_GAMES["Game ID"].values:
+async def delete_game(game_id: Annotated[str, Path(title="The ID of the game to delete")]):
+    global completed_games
+    if game_id not in completed_games.index:
         raise HTTPException(status_code=404, detail="No game found")
-    FINISHED_GAMES = FINISHED_GAMES[FINISHED_GAMES["Game ID"] != game_id].reset_index(drop=True)
-
+    completed_games = completed_games.drop(index=game_id)
     return {"message": f"Game {game_id} deleted successfully"}
-    
-@app.post("/upcoming_game")
-async def add_upcoming_game(game: ScheduledGame):
-    global upcoming_games
-    upcoming_games = add_scheduled_game(upcoming_games, game, team_elos)
-    # upcoming_games = pd.concat([upcoming_games, row])
-    return {"message": f"Game added successfully"}
 
-@app.post("/finished_game")
-async def add_finished_game(box_score: BoxScore):
-    global FINISHED_GAMES
-    FINISHED_GAMES = add_completed_game(FINISHED_GAMES, box_score)
-    return {"message": f"Game added successfully"}
+@app.post("/add_scheduled_game")
+async def add_scheduled_game(home_team: str, visitor_team: str, date: str, season: int):
+    global scheduled_games
+    try:
+        home = ALL_TEAMS[season][NBAName(home_team)]
+        visitor = ALL_TEAMS[season][NBAName(visitor_team)]
+        new_row = get_pregame_stats(home, visitor, date).set_index("Game ID")
+        scheduled_games = pd.concat([scheduled_games, new_row])
+        scheduled_games = scheduled_games[~scheduled_games.index.duplicated(keep="last")]
+        return {"message": f"Game added successfully", "game_id": new_row.index[0]}
+    except KeyError as e:
+        raise HTTPException(status_code=404, detail=f"Team not found: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error adding game: {e}")
+
+#also use GameUpdate
+# @app.post("/game")
+# async def add_completed_game(game: Dict[str, Any]):
+#     global completed_games
+#     game_id = game.get("Game ID")
+#     if not game_id:
+#         raise HTTPException(status_code=400, detail="Game ID is required")
+#     if game_id in completed_games.index:
+#         raise HTTPException(status_code=409, detail="Game already exists")
+#     new_row = pd.DataFrame([game]).set_index("Game ID")
+#     completed_games = pd.concat([completed_games, new_row])
+#     return {"message": f"Game {game_id} added successfully"}
+
+@app.post("/complete_scheduled_game/{game_id}")
+async def complete_scheduled_game(game_id: str):
+    global completed_games, scheduled_games
+    if game_id not in scheduled_games.index:
+        raise HTTPException(status_code=404, detail="Game not in schedule")
+    if game_id in completed_games.index:
+        raise HTTPException(status_code=409, detail="Game already completed")
+    
+    options = Options()
+    options.add_argument("--headless")
+    driver = webdriver.Chrome(options=options)
+    try:
+        scheduled_game = scheduled_games.loc[game_id]
+        scheduled_games, completed_games = add_game_result(scheduled_game, scheduled_games, completed_games, driver)
+        save_state(scheduled_games, completed_games)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error completing game: {e}")
+    finally:
+        driver.quit()
+    
+    return {"message": f"Game {game_id} completed successfully"}
+
+#check date format is valid
+@app.post("/fill_in_day")
+async def add_scores_for_day(date: str, season: int, safe: bool =True):
+    global scheduled_games, completed_games
+    options = Options()
+    options.add_argument("--headless")
+    driver = webdriver.Chrome(options=options)
+    try:
+        scheduled_games, completed_games = add_scores(date, season, scheduled_games, completed_games, driver, safe)
+        save_state(scheduled_games, completed_games)
+    except:
+        raise HTTPException(status_code=500, detail="error adding game")
+    finally:
+        driver.quit()
+    return {"message": f"Scores added succesfully"}
 
 @app.get("/prediction/{game_id}")
 async def predict_game(game_id: Annotated[int, Path(title="The ID of the game to predict", ge=0)]):
@@ -267,8 +226,8 @@ async def predict_game(game_id: Annotated[int, Path(title="The ID of the game to
 
 @app.get("/filter")
 async def filtered_games(filter1: FilterParams = Depends(get_filter1), filter2: FilterParams = Depends(get_filter2)):
-    df1 = FINISHED_GAMES.copy()
-    df2 = FINISHED_GAMES.copy()
+    df1 = completed_games.copy()
+    df2 = completed_games.copy()
 
     filters = {
         # Points
@@ -374,11 +333,11 @@ async def filtered_games(filter1: FilterParams = Depends(get_filter1), filter2: 
     
     df = pd.concat([df1, df2]).drop_duplicates()
     df = df.sort_values(by=["Date Number"], ascending=False)
-    return df.to_dict(orient="records")
+    return df.reset_index().to_dict(orient="records")
 
 @app.get("/filter-home-visitor")
 async def filtered_by_home(home_filter: FilterParams = Depends(get_filter1), visitor_filter: FilterParams = Depends(get_filter2)):
-    df = FINISHED_GAMES.copy()
+    df = completed_games.copy()
 
     filters = {
         # PTS
@@ -461,12 +420,12 @@ async def filtered_by_home(home_filter: FilterParams = Depends(get_filter1), vis
         if max_val is not None:
             df = df[df[column] <= max_val]
     df = df.sort_values(by=["Date Number"], ascending=False)
-    return df.to_dict(orient="records")
+    return df.reset_index().to_dict(orient="records")
 
 @app.get("/filter-winner-loser")
 async def filtered_by_winner(winner_filter: FilterParams = Depends(get_filter1), loser_filter: FilterParams = Depends(get_filter2)):
-    df1 = FINISHED_GAMES.copy()
-    df2 = FINISHED_GAMES.copy()
+    df1 = completed_games.copy()
+    df2 = completed_games.copy()
     filters = {
         # PTS
         "Winning Team PTS": (winner_filter.pts_min, winner_filter.pts_max),
@@ -571,21 +530,20 @@ async def filtered_by_winner(winner_filter: FilterParams = Depends(get_filter1),
     
     df = pd.concat([df1, df2]).drop_duplicates()
     df = df.sort_values(by=["Date Number"], ascending=False)
-    return df.to_dict(orient="records")
+    return df.reset_index().to_dict(orient="records")
 
 @app.get("/{team_name}")
 async def get_team(
     team_name: Annotated[str, Path(title="The name of the team to get")],
     season: Annotated[int, Query(title="The season to access")] = 2025
 ):
-    global FINISHED_GAMES
-    season_games = FINISHED_GAMES[FINISHED_GAMES["Season"] == season]
+    season_games = completed_games[completed_games["Season"] == season]
     team_games = season_games[
         (season_games["Home Team"] == team_name) |
         (season_games["Visitor Team"] == team_name)
     ]
     if not team_games.empty:
-        return team_games.to_dict(orient="records")
+        return team_games.reset_index().to_dict(orient="records")
     else:
         raise HTTPException(status_code=404, detail="Invalid team or year")
 

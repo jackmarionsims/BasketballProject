@@ -5,43 +5,14 @@ from io import StringIO
 from datetime import datetime
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
-from data_helpers import calculate_avgs_for_team, calculate_elos, NAME_TO_ABBR, date_to_num, ALL_TEAMS, get_pregame_stats, new_season, CACHE_VERSION, SCHEDULED_GAMES, elo_change, date_to_id, date_to_id2, date_to_date
-from classes2 import NBAName, NBATeam, BoxScore, ScheduledGame, Date, CompletedGame
+from data_helpers import NAME_TO_ABBR, date_to_num, get_pregame_stats, update_pgs, box_score_update, complete_game,  CACHE_VERSION, new_season, ALL_TEAMS, driver_get_with_retry
+from classes2 import NBAName
 import pickle
 import time
 from selenium.common.exceptions import WebDriverException
 import os
 import tempfile
 
-def save_state(scheduled_games, completed_games):
-    # Save pickle atomically
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.pkl') as tmp:
-        pickle.dump(ALL_TEAMS, tmp)
-        tmp_pkl = tmp.name
-    os.replace(tmp_pkl, f"all_teams{CACHE_VERSION}.pkl")
-
-    # Save CSVs atomically
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.csv', mode='w') as tmp:
-        scheduled_games.to_csv(tmp)
-        tmp_sch = tmp.name
-    os.replace(tmp_sch, 'scheduled_games2.csv')
-
-    with tempfile.NamedTemporaryFile(delete=False, suffix='.csv', mode='w') as tmp:
-        completed_games.to_csv(tmp)
-        tmp_cg = tmp.name
-    os.replace(tmp_cg, 'completed_games2.csv')
-
-def driver_get_with_retry(driver, url, retries=3, delay=5):
-    for attempt in range(retries):
-        try:
-            driver.get(url)
-            return
-        except Exception as e:
-            print(f"Attempt {attempt + 1} failed for {url}: {e}")
-            if attempt < retries - 1:
-                time.sleep(delay)
-            else:
-                raise
 
 '''
 Things to maintain
@@ -76,6 +47,7 @@ Update Completed Games
     else
     a) remove from df
 '''
+
 no_eff = [
     'Game ID', 'Date Number', 'Date', 'Game Type', 
     'Home Team', 'Visitor Team', 'Winner', 'Loser', 
@@ -134,6 +106,23 @@ no_eff = [
     'Visitor Team W', 'Visitor Team L', 'Visitor Team W/L%'
 ]
 
+def save_state(scheduled_games, completed_games):
+    # Save pickle atomically
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.pkl') as tmp:
+        pickle.dump(ALL_TEAMS, tmp)
+        tmp_pkl = tmp.name
+    os.replace(tmp_pkl, f"../all_teams1.pkl")
+
+    # Save CSVs atomically
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.csv', mode='w') as tmp:
+        scheduled_games.to_csv(tmp)
+        tmp_sch = tmp.name
+    os.replace(tmp_sch, '../scheduled_games.csv')
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix='.csv', mode='w') as tmp:
+        completed_games.to_csv(tmp)
+        tmp_cg = tmp.name
+    os.replace(tmp_cg, '../completed_games.csv')
 #KEEP
 def add_scores(date, season, scheduled_games, completed_games, driver, safe=True):
     #update schedule of day
@@ -145,7 +134,6 @@ def add_scores(date, season, scheduled_games, completed_games, driver, safe=True
     #update completed games
     day_games = scheduled_games[scheduled_games["Date Number"] == date_num]
     for idx, game in day_games.iterrows():
-        # once indexed by gameID
         if idx in completed_games.index:
             continue
         scheduled_games, completed_games = add_game_result(game, scheduled_games, completed_games, driver)
@@ -194,7 +182,7 @@ def update_schedule(month, season, scheduled_games, driver):
     #or maintain df from each individual month
     return scheduled_games
 
-#MOVE
+
 def add_game_result(scheduled_game, scheduled_games, completed_games, driver):
     """
     Gathers the box score of a given game from basketball reference, 
@@ -236,142 +224,18 @@ def add_game_result(scheduled_game, scheduled_games, completed_games, driver):
 
     box_score = box_score_update(scheduled_game, home_totals, visitor_totals)
     scheduled_games = update_pgs(scheduled_games, scheduled_game["Season"], scheduled_game["Home Team"], scheduled_game["Visitor Team"])
-    completed_games = add_completed_game(scheduled_game, box_score, completed_games)
+    completed_games = complete_game(scheduled_game, box_score, completed_games)
     return scheduled_games, completed_games
     
-#MOVE
-def box_score_update(scheduled_game, home_totals, visitor_totals):
-    """
-    update team stats for home and away team using box score of game
-    """
-    #also calculate elo change
-    box_score = {}
-    season = scheduled_game["Season"]
-    home = ALL_TEAMS[season][NBAName(scheduled_game["Home Team"])]
-    visitor = ALL_TEAMS[season][NBAName(scheduled_game["Visitor Team"])]
-
-    home_points = int(home_totals["PTS"])
-    visitor_points = int(visitor_totals["PTS"])
-    home_win = 1 if home_points > visitor_points else 0
-
-    #elo changes
-    margin = home_points - visitor_points
-    delta = elo_change(home.elo+100, visitor.elo, margin)
-    home.elo += delta
-    visitor.elo -= delta
-
-    home.stats["Total Games"] += 1
-    home.stats["Total Home Games"] += 1
-    home.stats["W"] += home_win
-    home.stats["Home W"] += home_win
-    home.stats["L"] += (1-home_win)
-    home.stats["Home L"] += (1-home_win)
-
-    visitor.stats["Total Games"] += 1
-    visitor.stats["Total Visitor Games"] += 1
-    visitor.stats["W"] += (1-home_win)
-    visitor.stats["Visitor W"] += (1-home_win)
-    visitor.stats["L"] += home_win
-    visitor.stats["Visitor L"] += home_win
-
-    
-    #handle percentages differently
-    cols = [
-        'PTS', 'AST', 'TRB', 'ORB', 
-        'DRB', 'BLK', 'STL', 
-        'FGA', 'FG', '3PA', 
-        '3P', 'FTA', 'FT', 
-        'PF', 'TOV'
-    ]
-    
-    
-    for col in cols:
-        home_stat = int(home_totals[col])
-        visitor_stat = int(visitor_totals[col])
-
-        box_score[f"Home Team {col}"] = home_stat
-        box_score[f"Visitor Team {col}"] = visitor_stat
-
-        home.stats[f"Total {col}"] += home_stat
-        home.stats[f"Home Total {col}"] += home_stat
-        home.stats[f"Total Opp {col}"] += visitor_stat
-        home.stats[f"Home Total Opp {col}"] += visitor_stat
-
-        visitor.stats[f"Total {col}"] += visitor_stat
-        visitor.stats[f"Visitor Total {col}"] += visitor_stat
-        visitor.stats[f"Total Opp {col}"] += home_stat
-        visitor.stats[f"Visitor Total Opp {col}"] += home_stat
-
-    percs = ["FG%", "3P%", "FT%"]
-    for perc in percs:
-        home_stat = float(home_totals[perc])
-        visitor_stat = float(visitor_totals[perc])
-        box_score[f"Home Team {perc}"] = home_stat
-        box_score[f"Visitor Team {perc}"] = visitor_stat
-    
-    box_score["Winner"] = home.name.value if home_win else visitor.name.value
-    box_score["Loser"] = visitor.name.value if home_win else home.name.value
-    box_score["Home Win"] = home_win
-    
-    return box_score
-
-#MOVE
-def update_pgs(scheduled_games, season, home_name, visitor_name):
-    scheduled_games = scheduled_games.copy()
-    teams_played = {home_name, visitor_name}
-    for idx, game in scheduled_games.iterrows():
-        if game["Home Team"] in teams_played or game["Visitor Team"] in teams_played:
-            home = ALL_TEAMS[season][NBAName(game["Home Team"])]
-            visitor = ALL_TEAMS[season][NBAName(game["Visitor Team"])]
-            date = game["Date"]
-            row = get_pregame_stats(home, visitor, date)
-            scheduled_games.loc[idx] = row.set_index("Game ID").iloc[0]
-    return scheduled_games
-
-#MOVE
-def add_completed_game(scheduled_game, box_score, completed_games):
-    sg_dict = scheduled_game.to_dict()
-    sg_dict["Game ID"] = scheduled_game.name
-    combined = {**sg_dict, **box_score}
-    # print(combined)
-    new_row = pd.DataFrame([combined]).set_index("Game ID")
-    completed_games = pd.concat([completed_games, new_row])
-    #completed_games.to_csv("completed_games.csv", index=False)
-    return completed_games
-
-
-def reset_all_teams():
-    modern = pd.read_csv("csvs/modern.csv")
-    for season in range(1985, 2027):
-        if season != 2026:
-            games = modern[modern["Season"] == season]
-        else:
-            games = modern[modern["Season"] == 2025]
-        teams = games["Home Team"].unique()
-        new_season(modern, season, teams)
-    
-    with open(f"all_teams{CACHE_VERSION}.pkl", "wb") as f:
-        pickle.dump(ALL_TEAMS, f)
-
-def test_create_schedule(scheduled_games, driver):
-    months = ["october", "november", "december", "january", "february", "march", "april"]
-
-    try:
-        for month in months:
-            scheduled_games = update_schedule(month, 2026, scheduled_games, driver)
-            print(month, "completed")
-    finally:
-        driver.quit()
-    return scheduled_games
 
 def main():
     options = Options()
     options.add_argument("--headless")
     #driver = webdriver.Chrome(options=options)
-    with open(f"all_teams{CACHE_VERSION}.pkl", "rb") as f:
+    with open(f"../all_teams{CACHE_VERSION}.pkl", "rb") as f:
         loaded = pickle.load(f)
     ALL_TEAMS.update(loaded)
-    print(ALL_TEAMS[2026][NBAName("New York Knicks")])
+    print(ALL_TEAMS[2026][NBAName("Detroit Pistons")])
     # scheduled_games = pd.read_csv('scheduled_games.csv').set_index("Game ID")
     # completed_games = pd.read_csv('modern2.csv', index_col=0)
     # completed_games["Game ID"] = completed_games.apply(lambda row: date_to_id2(row["Home Team"], row["Date"]), axis=1)

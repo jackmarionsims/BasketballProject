@@ -21,7 +21,7 @@ export default function GamesTable({ games }: { games: any[] }) {
                         </Table.Td>
                         <Table.Td>{game["Home Team"]}</Table.Td>
                         <Table.Td>
-                            <Link to={`/game/${game["Game ID"]}`} target="_blank" rel="noopener noreferrer">
+                            <Link to={`/game/${game["Game ID"]}?box_score_only=true`} target="_blank" rel="noopener noreferrer">
                                 Box Score
                             </Link>
                         </Table.Td>

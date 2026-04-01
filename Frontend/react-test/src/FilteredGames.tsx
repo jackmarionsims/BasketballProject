@@ -8,9 +8,7 @@ import './App.css';
 import GamesTable from "./GamesTable";
 
 export function formatDate(dateString: string): string {
-    const date = new Date(dateString);
-
-    // Use Intl API for proper formatting
+    const date = new Date(dateString + " 12:00:00");
     return date.toLocaleDateString("en-US", {
         year: "numeric",
         month: "long",

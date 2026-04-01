@@ -81,8 +81,8 @@ export async function getTeam(teamName: string, season: number = 2025) {
     return res.json();
 }
 
-export async function getGame(gameId: number) {
-    const res = await fetch(`${BASE_URL}/game/${gameId}`);
+export async function getGame(gameId: string, boxScoreOnly: boolean = true) {
+    const res = await fetch(`${BASE_URL}/game/${gameId}?box_score_only=${boxScoreOnly}`);
     if (!res.ok) {
         throw new Error(`Error fetching data: ${res.statusText}`);
     }
